@@ -44,6 +44,10 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: AuthUser;
@@ -61,6 +65,11 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
 
 export async function getMe(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>('/me');
+  return data;
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/forgot-password', payload);
   return data;
 }
 
