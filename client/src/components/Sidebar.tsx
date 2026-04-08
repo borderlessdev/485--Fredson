@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { type ComponentType } from 'react';
 
@@ -131,9 +132,9 @@ interface SidebarProps {
 
 // ── Accent dot per section ────────────────────────────────────────────────────
 const SECTION_COLORS: Record<string, string> = {
-  Principal:    'bg-indigo-500',
-  Ferramentas:  'bg-cyan-500',
-  Cadastros:    'bg-violet-500',
+  Principal:    'bg-blue-600',
+  Ferramentas:  'bg-sky-500',
+  Cadastros:    'bg-cyan-500',
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ const SECTION_COLORS: Record<string, string> = {
 export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps) {
   const navigate    = useNavigate();
   const { pathname } = useLocation();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const initials = userName
     .split(' ')
@@ -149,45 +151,56 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
     .join('');
 
   return (
-    <aside className="w-[240px] shrink-0 flex flex-col h-screen bg-[#0a0c16] select-none">
-
-      {/* subtle right edge glow */}
-      <div className="absolute left-[239px] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-indigo-500/20 to-transparent pointer-events-none" />
+    <aside
+      className={[
+        'shrink-0 flex flex-col h-screen bg-white border-r border-slate-200 select-none',
+        'transition-[width] duration-200 ease-in-out overflow-hidden',
+        isExpanded ? 'w-[220px]' : 'w-[58px]',
+      ].join(' ')}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
 
       {/* ── Brand ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 h-[62px] shrink-0">
+      <div className="flex items-center gap-2.5 px-[14px] h-[62px] shrink-0">
         {/* Logo mark: gradient ring + bolt */}
         <div className="relative shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white shadow-sm">
             <IcoBolt />
           </div>
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border-2 border-[#0a0c16]" />
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border-2 border-white" />
         </div>
 
-        <div className="leading-none">
-          <p className="text-[14px] font-black tracking-tight text-white">485</p>
-          <p className="text-[9px] font-semibold tracking-[0.2em] text-indigo-400 uppercase mt-0.5">Gestão</p>
+        <div className={`leading-none overflow-hidden whitespace-nowrap transition-all duration-200 ${
+          isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
+        }`}>
+          <p className="text-[14px] font-black tracking-tight text-slate-900">485</p>
+          <p className="text-[9px] font-semibold tracking-[0.2em] text-sky-600 uppercase mt-0.5">Gestão</p>
         </div>
       </div>
 
       {/* ── thin separator ─────────────────────────────────────────────────── */}
-      <div className="mx-4 h-px bg-white/[0.06] shrink-0" />
+      <div className="mx-4 h-px bg-slate-200 shrink-0" />
 
       {/* ── Navigation ─────────────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-7 scrollbar-none">
+      <nav className="flex-1 overflow-y-auto px-[11px] py-4 space-y-4 scrollbar-none">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title}>
 
-            {/* Section header: colored dot + label */}
-            <div className="flex items-center gap-2 px-2 mb-2.5">
+            {/* Section header: only visible when expanded */}
+            <div
+              className={`flex items-center gap-2 px-2 overflow-hidden transition-all duration-200 ${
+                isExpanded ? 'opacity-100 max-h-8 mb-2.5' : 'opacity-0 max-h-0 mb-0'
+              }`}
+            >
               <span className={`w-1.5 h-1.5 rounded-full ${SECTION_COLORS[section.title] ?? 'bg-slate-500'} shrink-0`} />
-              <p className="text-[10px] font-bold tracking-[0.16em] text-slate-600 uppercase">
+              <p className="text-[10px] font-bold tracking-[0.16em] text-slate-400 uppercase whitespace-nowrap">
                 {section.title}
               </p>
             </div>
 
             {/* Items */}
-            <ul className="space-y-[3px]">
+            <ul className="space-y-0.5">
               {section.items.map(({ label, icon: Icon, href }) => {
                 const active = pathname === href;
                 return (
@@ -195,28 +208,34 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
                     <button
                       onClick={() => navigate(href)}
                       className={[
-                        'w-full flex items-center gap-3 px-3 py-[9px] rounded-xl text-[13px] font-medium',
+                        'w-full flex items-center gap-2.5 px-2 py-[9px] rounded-xl text-[13px] font-medium',
                         'transition-all duration-150 group',
-                        active
-                          ? 'bg-gradient-to-r from-indigo-500/[0.18] to-cyan-500/[0.06] text-white'
-                          : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]',
+                        !isExpanded ? 'justify-center' : '',
+                        active && isExpanded
+                          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 ring-1 ring-blue-100'
+                          : active
+                          ? 'text-blue-700'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
                       ].join(' ')}
                     >
                       {/* Icon container */}
                       <span className={[
                         'flex items-center justify-center w-[30px] h-[30px] rounded-lg shrink-0 transition-all duration-150',
                         active
-                          ? 'bg-indigo-500/[0.2] text-indigo-400'
-                          : 'bg-white/[0.03] text-slate-600 group-hover:bg-white/[0.07] group-hover:text-slate-400',
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700',
                       ].join(' ')}>
                         <Icon />
                       </span>
 
-                      <span className="flex-1 text-left">{label}</span>
+                      {/* Label — hidden when collapsed */}
+                      <span className={`flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-150 ${
+                        isExpanded ? 'opacity-100' : 'opacity-0 w-0'
+                      }`}>{label}</span>
 
                       {/* Active pill indicator */}
-                      {active && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                      {active && isExpanded && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
                       )}
                     </button>
                   </li>
@@ -228,35 +247,43 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
       </nav>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <div className="px-3 pb-4 pt-3 shrink-0">
-        <div className="mx-0 h-px bg-white/[0.05] mb-3" />
+      <div className="px-[11px] pb-4 pt-3 shrink-0">
+        <div className="h-px bg-slate-200 mb-3" />
 
         {/* User card */}
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-1">
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-[11px] shrink-0"
-          >
+        <div className={`flex items-center gap-2.5 px-2 py-2.5 rounded-xl mb-1 transition-all duration-200 ${
+          isExpanded
+            ? 'bg-slate-50 border border-slate-200'
+            : 'justify-center bg-transparent border border-transparent'
+        }`}>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold text-[11px] shrink-0">
             {initials}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-semibold text-slate-300 truncate leading-none">{userName}</p>
-            <p className="text-[10px] text-slate-600 truncate mt-[3px]">{userEmail}</p>
+          <div className={`min-w-0 flex-1 overflow-hidden transition-all duration-200 ${
+            isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
+          }`}>
+            <p className="text-[12px] font-semibold text-slate-800 truncate leading-none whitespace-nowrap">{userName}</p>
+            <p className="text-[10px] text-slate-500 truncate mt-1 whitespace-nowrap">{userEmail}</p>
           </div>
           {/* online dot */}
-          <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+          {isExpanded && <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />}
         </div>
 
         {/* Logout */}
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-[9px] rounded-xl text-[13px] font-medium
-                     text-slate-600 hover:text-red-400 hover:bg-red-500/[0.07]
-                     transition-all duration-150 group"
+          className={`w-full flex items-center gap-2.5 px-2 py-[9px] rounded-xl text-[13px] font-medium
+                     text-slate-600 hover:text-red-600 hover:bg-red-50
+                     transition-all duration-150 group ${
+            !isExpanded ? 'justify-center' : ''
+          }`}
         >
-          <span className="flex items-center justify-center w-[30px] h-[30px] rounded-lg bg-white/[0.03] group-hover:bg-red-500/[0.1] transition-all duration-150">
+          <span className="flex items-center justify-center w-[30px] h-[30px] rounded-lg bg-slate-100 group-hover:bg-red-100 transition-all duration-150 shrink-0">
             <IcoLogout />
           </span>
-          Sair da conta
+          <span className={`whitespace-nowrap overflow-hidden transition-all duration-150 ${
+            isExpanded ? 'opacity-100' : 'opacity-0 w-0'
+          }`}>Sair da conta</span>
         </button>
       </div>
     </aside>
