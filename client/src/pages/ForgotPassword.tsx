@@ -39,32 +39,74 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-[420px] animate-slide-up">
+    <div className="min-h-screen flex bg-white">
+      {/* ── Left: Brand panel ─────────────────────────────────────────────── */}
+      <div
+        className="hidden lg:flex lg:w-[52%] flex-col justify-between p-12 relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 40%, #06b6d4 100%)' }}
+      >
+        {/* Background pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}
+        />
+        {/* Glow orbs */}
+        <div className="absolute top-[-80px] right-[-80px] w-[360px] h-[360px] rounded-full bg-cyan-300/20 blur-[80px]" />
+        <div className="absolute bottom-[-60px] left-[-60px] w-[280px] h-[280px] rounded-full bg-teal-300/20 blur-[60px]" />
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        {/* Logo */}
+        <div className="relative flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <span className="text-white text-2xl font-extrabold tracking-tight">485</span>
+        </div>
 
-          {/* Brand */}
-          <div className="flex items-center gap-3 mb-7">
+        {/* Hero text */}
+        <div className="relative">
+          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
+            Gerencie seus<br />projetos com<br />eficiência.
+          </h1>
+          <p className="text-white/70 text-base leading-relaxed max-w-sm">
+            Plataforma completa para gestão de clientes, projetos e documentos — tudo em um único lugar.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="relative grid grid-cols-2 gap-3">
+          {[
+            { value: '1.200+', label: 'Projetos gerenciados' },
+            { value: '300+',   label: 'Clientes atendidos'  },
+            { value: '99.9%',  label: 'Uptime garantido'    },
+            { value: '8.000+', label: 'Documentos gerados'  },
+          ].map((s) => (
+            <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4">
+              <p className="text-2xl font-bold text-white">{s.value}</p>
+              <p className="text-white/60 text-xs mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Right: Form panel ────────────────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
+        <div className="w-full max-w-[380px] animate-slide-up">
+
+          {/* Mobile logo */}
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="w-9 h-9 bg-cyan-600 rounded-xl flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-slate-900">485</span>
+            <span className="text-xl font-bold text-slate-900">485</span>
           </div>
 
-          {/* Icon decorativo */}
-          <div className="w-12 h-12 bg-cyan-50 border border-cyan-100 rounded-xl flex items-center justify-center mb-5">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-
-          <h1 className="text-xl font-bold text-slate-900 mb-1">Recuperar acesso</h1>
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-            Informe seu e-mail e enviaremos as instruções para você redefinir sua senha.
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Recuperar acesso</h2>
+          <p className="text-slate-500 text-sm mb-7 leading-relaxed">
+            Informe seu e-mail e enviaremos as instruções para redefinir sua senha.
           </p>
 
           {/* Success */}
@@ -109,7 +151,7 @@ export default function ForgotPasswordPage() {
             </button>
           </form>
 
-          <div className="mt-5 pt-5 border-t border-slate-100 text-center">
+          <div className="mt-6 text-center">
             <Link
               to="/login"
               className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-cyan-600 transition-colors font-medium"
