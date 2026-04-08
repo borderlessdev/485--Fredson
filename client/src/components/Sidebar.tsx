@@ -5,7 +5,7 @@ import { type ComponentType } from 'react';
 
 function IcoBolt() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   );
@@ -129,10 +129,17 @@ interface SidebarProps {
   userEmail: string;
 }
 
+// ── Accent dot per section ────────────────────────────────────────────────────
+const SECTION_COLORS: Record<string, string> = {
+  Principal:    'bg-indigo-500',
+  Ferramentas:  'bg-cyan-500',
+  Cadastros:    'bg-violet-500',
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps) {
-  const navigate  = useNavigate();
+  const navigate    = useNavigate();
   const { pathname } = useLocation();
 
   const initials = userName
@@ -142,31 +149,45 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
     .join('');
 
   return (
-    <aside className="w-64 shrink-0 flex flex-col h-screen bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700/50">
+    <aside className="w-[240px] shrink-0 flex flex-col h-screen bg-[#0a0c16] select-none">
+
+      {/* subtle right edge glow */}
+      <div className="absolute left-[239px] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-indigo-500/20 to-transparent pointer-events-none" />
 
       {/* ── Brand ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-700/50 shrink-0">
-        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white shadow-md shadow-indigo-500/30 shrink-0">
-          <IcoBolt />
+      <div className="flex items-center gap-3 px-5 h-[62px] shrink-0">
+        {/* Logo mark: gradient ring + bolt */}
+        <div className="relative shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+            <IcoBolt />
+          </div>
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border-2 border-[#0a0c16]" />
         </div>
+
         <div className="leading-none">
-          <span className="text-white font-extrabold text-[15px] tracking-tight">GESTOR </span>
-          <span className="text-indigo-400 font-extrabold text-[15px] tracking-tight">PRO</span>
+          <p className="text-[14px] font-black tracking-tight text-white">485</p>
+          <p className="text-[9px] font-semibold tracking-[0.2em] text-indigo-400 uppercase mt-0.5">Gestão</p>
         </div>
       </div>
 
+      {/* ── thin separator ─────────────────────────────────────────────────── */}
+      <div className="mx-4 h-px bg-white/[0.06] shrink-0" />
+
       {/* ── Navigation ─────────────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-7 scrollbar-none">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title}>
 
-            {/* Section label */}
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 px-3 mb-2 select-none">
-              {section.title}
-            </p>
+            {/* Section header: colored dot + label */}
+            <div className="flex items-center gap-2 px-2 mb-2.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${SECTION_COLORS[section.title] ?? 'bg-slate-500'} shrink-0`} />
+              <p className="text-[10px] font-bold tracking-[0.16em] text-slate-600 uppercase">
+                {section.title}
+              </p>
+            </div>
 
             {/* Items */}
-            <ul className="space-y-0.5">
+            <ul className="space-y-[3px]">
               {section.items.map(({ label, icon: Icon, href }) => {
                 const active = pathname === href;
                 return (
@@ -174,18 +195,29 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
                     <button
                       onClick={() => navigate(href)}
                       className={[
-                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
-                        'transition-all duration-150',
-                        'border-l-[3px]',
+                        'w-full flex items-center gap-3 px-3 py-[9px] rounded-xl text-[13px] font-medium',
+                        'transition-all duration-150 group',
                         active
-                          ? 'bg-slate-700/60 text-white border-indigo-500'
-                          : 'text-slate-400 hover:bg-slate-700/30 hover:text-slate-200 border-transparent',
+                          ? 'bg-gradient-to-r from-indigo-500/[0.18] to-cyan-500/[0.06] text-white'
+                          : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]',
                       ].join(' ')}
                     >
-                      <span className={active ? 'text-indigo-400' : 'text-slate-500'}>
+                      {/* Icon container */}
+                      <span className={[
+                        'flex items-center justify-center w-[30px] h-[30px] rounded-lg shrink-0 transition-all duration-150',
+                        active
+                          ? 'bg-indigo-500/[0.2] text-indigo-400'
+                          : 'bg-white/[0.03] text-slate-600 group-hover:bg-white/[0.07] group-hover:text-slate-400',
+                      ].join(' ')}>
                         <Icon />
                       </span>
-                      {label}
+
+                      <span className="flex-1 text-left">{label}</span>
+
+                      {/* Active pill indicator */}
+                      {active && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                      )}
                     </button>
                   </li>
                 );
@@ -196,28 +228,35 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
       </nav>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <div className="px-3 py-3 border-t border-slate-700/50 space-y-1 shrink-0">
+      <div className="px-3 pb-4 pt-3 shrink-0">
+        <div className="mx-0 h-px bg-white/[0.05] mb-3" />
 
-        {/* User chip */}
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
-          <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-[11px] shrink-0 select-none">
+        {/* User card */}
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-1">
+          <div
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-[11px] shrink-0"
+          >
             {initials}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-300 truncate leading-none">{userName}</p>
-            <p className="text-[11px] text-slate-500 truncate mt-0.5">{userEmail}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold text-slate-300 truncate leading-none">{userName}</p>
+            <p className="text-[10px] text-slate-600 truncate mt-[3px]">{userEmail}</p>
           </div>
+          {/* online dot */}
+          <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
         </div>
 
         {/* Logout */}
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 border-l-[3px] border-transparent transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-[9px] rounded-xl text-[13px] font-medium
+                     text-slate-600 hover:text-red-400 hover:bg-red-500/[0.07]
+                     transition-all duration-150 group"
         >
-          <span className="text-red-500/70">
+          <span className="flex items-center justify-center w-[30px] h-[30px] rounded-lg bg-white/[0.03] group-hover:bg-red-500/[0.1] transition-all duration-150">
             <IcoLogout />
           </span>
-          Sair
+          Sair da conta
         </button>
       </div>
     </aside>
