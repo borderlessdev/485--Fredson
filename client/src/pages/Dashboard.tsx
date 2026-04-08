@@ -181,7 +181,7 @@ export default function DashboardPage() {
 
   function handleLogout() {
     signOut();
-    navigate('/login', { replace: true });
+    navigate('/dashboard', { replace: true });
   }
 
   return (
