@@ -100,7 +100,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Principal',
     items: [
       { label: 'Dashboard',   icon: IcoDashboard,    href: '/dashboard'    },
-      { label: 'Operacoes',   icon: IcoOperacoes,    href: '/operacoes'    },
+      { label: 'Cedentes',     icon: IcoOperacoes,    href: '/cedentes'     },
       { label: 'Esteira',     icon: IcoEsteira,      href: '/esteira'      },
     ],
   },

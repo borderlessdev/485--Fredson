@@ -4,7 +4,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import LoginPage from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import ForgotPasswordPage from '@/pages/ForgotPassword';
-import OperacoesPage from '@/pages/Operacoes';
+import CedentesPage from '@/pages/Cedentes';
+import EsteiraPage from '@/pages/Esteira';
+import CalculadoraPage from '@/pages/Calculadora';
 
 export default function App() {
   return (
@@ -16,7 +18,9 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/operacoes" element={<OperacoesPage />} />
+            <Route path="/cedentes" element={<CedentesPage />} />
+            <Route path="/esteira" element={<EsteiraPage />} />
+            <Route path="/calculadora" element={<CalculadoraPage />} />
           </Route>
 
           {/* Fallback */}

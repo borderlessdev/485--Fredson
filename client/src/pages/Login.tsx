@@ -173,7 +173,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right: Form panel ────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-[380px] animate-slide-up">
 
           {/* Mobile logo */}
