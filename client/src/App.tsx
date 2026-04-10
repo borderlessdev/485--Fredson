@@ -7,6 +7,8 @@ import ForgotPasswordPage from '@/pages/ForgotPassword';
 import CedentesPage from '@/pages/Cedentes';
 import EsteiraPage from '@/pages/Esteira';
 import CalculadoraPage from '@/pages/Calculadora';
+import GeradorDocsPage from '@/pages/GeradorDocs';
+import ImportarPage from '@/pages/Importar';
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
             <Route path="/cedentes" element={<CedentesPage />} />
             <Route path="/esteira" element={<EsteiraPage />} />
             <Route path="/calculadora" element={<CalculadoraPage />} />
+            <Route path="/gerador-docs" element={<GeradorDocsPage />} />
+            <Route path="/importar" element={<ImportarPage />} />
           </Route>
 
           {/* Fallback */}
