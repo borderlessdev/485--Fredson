@@ -22,7 +22,7 @@ export default function LineChart<TDatum>({ data, xLabelAccessor, series }: Line
 
   return (
     <div className="relative">
-      <BaseChart xLabels={xLabels} values={values} height={190} yTickFormatter={formatInteger}>
+      <BaseChart xLabels={xLabels} values={values} height={320} yTickFormatter={formatInteger}>
         {({ x, y, width, padding, innerHeight }) => {
           const pointsBySeries = series.map((line) =>
             data.map((datum, index) => ({
@@ -56,7 +56,7 @@ export default function LineChart<TDatum>({ data, xLabelAccessor, series }: Line
                       d={pathData}
                       fill="none"
                       stroke={currentSeries.color}
-                      strokeWidth="2.2"
+                      strokeWidth="2.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
@@ -65,10 +65,10 @@ export default function LineChart<TDatum>({ data, xLabelAccessor, series }: Line
                         key={`${currentSeries.key}-${pointIndex}`}
                         cx={point.x}
                         cy={point.y}
-                        r={activeIndex === pointIndex ? 4.5 : 3.5}
+                        r={activeIndex === pointIndex ? 6 : 4.5}
                         fill={currentSeries.color}
                         stroke="white"
-                        strokeWidth="2"
+                        strokeWidth="2.5"
                         className="transition-all duration-150"
                       />
                     ))}

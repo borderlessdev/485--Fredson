@@ -30,10 +30,10 @@ interface BaseChartProps {
 }
 
 const DEFAULT_PADDING: BaseChartPadding = {
-  top: 18,
-  right: 16,
-  bottom: 38,
-  left: 36,
+  top: 22,
+  right: 20,
+  bottom: 46,
+  left: 44,
 };
 
 function getNiceMax(maxValue: number): number {
@@ -52,7 +52,7 @@ export default function BaseChart({
   values,
   yTickCount = 4,
   width = 640,
-  height = 190,
+  height = 320,
   className = 'w-full',
   yTickFormatter = (value) => `${value}`,
   children,
@@ -88,7 +88,7 @@ export default function BaseChart({
               stroke="#e2e8f0"
               strokeWidth="1"
             />
-            <text x={padding.left - 6} y={yPos + 4} textAnchor="end" fontSize="9" fill="#94a3b8">
+            <text x={padding.left - 6} y={yPos + 4} textAnchor="end" fontSize="10" fill="#94a3b8">
               {yTickFormatter(value)}
             </text>
           </g>
@@ -103,7 +103,7 @@ export default function BaseChart({
           x={x(index)}
           y={height - 10}
           textAnchor="middle"
-          fontSize="9"
+          fontSize="10"
           fill="#94a3b8"
         >
           {label}

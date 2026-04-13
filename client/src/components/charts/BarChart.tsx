@@ -31,10 +31,10 @@ export default function BarChart<TDatum>({
 
   return (
     <div className="relative">
-      <BaseChart xLabels={xLabels} values={values} height={190} yTickFormatter={formatInteger}>
+      <BaseChart xLabels={xLabels} values={values} height={320} yTickFormatter={formatInteger}>
         {({ x, y, padding, innerWidth, innerHeight, width }) => {
           const slotWidth = innerWidth / Math.max(data.length, 1);
-          const barWidth = Math.min(46, slotWidth * 0.76);
+          const barWidth = Math.min(54, slotWidth * 0.70);
 
           return (
             <>
@@ -56,7 +56,7 @@ export default function BarChart<TDatum>({
                       y={yPos}
                       width={barWidth}
                       height={barHeight}
-                      rx="5"
+                      rx="7"
                       fill={color}
                       className="transition-opacity duration-150"
                       opacity={activeIndex === null || activeIndex === index ? 1 : 0.45}
