@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
+import ProjefImportPanel from '@/components/ProjefImportPanel';
 import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
+import { openProjef } from '@/data/projef';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -175,12 +177,15 @@ function DetailModal({
   op,
   onClose,
   onStatusChange,
+  onValorChange,
 }: {
   op: Operacao;
   onClose: () => void;
   onStatusChange: (id: number, status: PrecatorioStatus) => void;
+  onValorChange: (id: number, valor: number, meta?: { projefCodigo?: string }) => void;
 }) {
   const [status, setStatus] = useState(op.status);
+  const [projefCodigo, setProjefCodigo] = useState('');
 
   return (
     <ModalShell
@@ -189,6 +194,13 @@ function DetailModal({
       onClose={onClose}
       footer={
         <>
+          <button
+            type="button"
+            onClick={openProjef}
+            className="mr-auto px-3 py-2 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+          >
+            Abrir PROJEF
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -226,6 +238,9 @@ function DetailModal({
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Valor</p>
             <p className="text-sm font-bold text-slate-900 mt-1">{BRL.format(op.valor)}</p>
+            {projefCodigo && (
+              <p className="text-[10px] text-indigo-600 mt-1">PROJEF: {projefCodigo}</p>
+            )}
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Valor Face</p>
@@ -240,6 +255,19 @@ function DetailModal({
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+        </div>
+
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-2">Atualizar valor via PROJEF</p>
+          <ProjefImportPanel
+            compact
+            onImport={({ codigo, valor }) => {
+              const n = Number(valor.replace(/\./g, '').replace(',', '.'));
+              if (Number.isNaN(n)) return;
+              onValorChange(op.id, n, { projefCodigo: codigo || undefined });
+              if (codigo) setProjefCodigo(codigo);
+            }}
+          />
         </div>
       </div>
     </ModalShell>
@@ -391,6 +419,10 @@ export default function OperacoesPage() {
 
   function handleStatusChange(id: number, status: PrecatorioStatus) {
     setOps((prev) => prev.map((op) => (op.id === id ? { ...op, status } : op)));
+  }
+
+  function handleValorChange(id: number, valor: number) {
+    setOps((prev) => prev.map((op) => (op.id === id ? { ...op, valor } : op)));
   }
 
   function handleCreate(data: Omit<Operacao, 'id' | 'cotacao' | 'cadastradoEm'>) {
@@ -675,6 +707,10 @@ export default function OperacoesPage() {
           op={selected}
           onClose={() => setSelected(null)}
           onStatusChange={handleStatusChange}
+          onValorChange={(id, valor) => {
+            handleValorChange(id, valor);
+            setSelected((prev) => (prev && prev.id === id ? { ...prev, valor } : prev));
+          }}
         />
       )}
       {showNova && (

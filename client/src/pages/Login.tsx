@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import LoginCalendar from '@/components/LoginCalendar';
 import { getAuthErrorMessage, login, register } from '@/services/auth';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -71,6 +70,12 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
+const PIPELINE = [
+  { label: 'Proposta', hint: 'Captação e análise' },
+  { label: 'Aprovação', hint: 'Documentos e status' },
+  { label: 'Cessão', hint: 'Fechamento da operação' },
+];
+
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -122,243 +127,275 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex bg-[#f7fafc]">
       {/* ── Left: Brand panel ─────────────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 40%, #06b6d4 100%)' }}>
+      <div
+        className="hidden lg:flex lg:w-[48%] flex-col justify-between p-12 xl:p-14 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #0c4a6e 0%, #0e7490 45%, #0891b2 100%)' }}
+      >
+        {/* Atmosphere */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+        <div className="absolute -top-24 -right-20 w-[420px] h-[420px] rounded-full bg-cyan-300/15 blur-[90px]" />
+        <div className="absolute bottom-[-80px] left-[-40px] w-[300px] h-[300px] rounded-full bg-sky-900/40 blur-[70px]" />
+        <div className="absolute top-1/2 right-8 w-px h-40 bg-gradient-to-b from-transparent via-white/25 to-transparent" />
 
-        {/* Background pattern */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
-        {/* Glow orbs */}
-        <div className="absolute top-[-80px] right-[-80px] w-[360px] h-[360px] rounded-full bg-cyan-300/20 blur-[80px]" />
-        <div className="absolute bottom-[-60px] left-[-60px] w-[280px] h-[280px] rounded-full bg-teal-300/20 blur-[60px]" />
-
-        {/* Logo */}
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span className="text-white text-2xl font-extrabold tracking-tight">485</span>
-        </div>
-
-        {/* Hero text */}
-        <div className="relative">
-          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Gerencie seus<br />projetos com<br />eficiência.
-          </h1>
-          <p className="text-white/70 text-base leading-relaxed max-w-sm">
-            Plataforma completa para gestão de clientes, projetos e documentos — tudo em um único lugar.
-          </p>
-        </div>
-
-        {/* Calendar */}
-        <div className="relative max-w-sm">
-          <LoginCalendar />
-        </div>
-      </div>
-
-      {/* ── Right: Form panel ────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-[380px] animate-slide-up">
-
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 bg-cyan-600 rounded-xl flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        {/* Brand */}
+        <div className="relative animate-fade-in">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur-sm shadow-lg shadow-sky-950/20">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-slate-900">485</span>
-          </div>
-
-          {/* Title */}
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">
-            {mode === 'login' ? 'Entrar na conta' : 'Criar conta'}
-          </h2>
-          <p className="text-slate-500 text-sm mb-7">
-            {mode === 'login'
-              ? 'Bem-vindo de volta! Digite suas credenciais.'
-              : 'Preencha os dados abaixo para começar.'}
-          </p>
-
-          {/* API Error */}
-          {apiError && (
-            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 animate-fade-in">
-              {apiError}
+            <div>
+              <p className="text-white text-[1.75rem] font-black tracking-tight leading-none font-display">485</p>
+              <p className="text-[10px] font-semibold tracking-[0.22em] text-cyan-100/80 uppercase mt-1">Gestão</p>
             </div>
-          )}
-
-          {/* ── Login form ────────────────────────────────────────── */}
-          {mode === 'login' && (
-            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4" noValidate>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
-                <input
-                  {...loginForm.register('email')}
-                  type="email"
-                  placeholder="usuario@empresa.com"
-                  autoComplete="email"
-                  className="input-field"
-                />
-                {loginForm.formState.errors.email && (
-                  <p className="error-text">{loginForm.formState.errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
-                <div className="relative">
-                  <input
-                    {...loginForm.register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    className="input-field pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <IconEye open={showPassword} />
-                  </button>
-                </div>
-                {loginForm.formState.errors.password && (
-                  <p className="error-text">{loginForm.formState.errors.password.message}</p>
-                )}
-              </div>
-
-              <div className="flex justify-end -mt-1">
-                <button
-                  type="button"
-                  onClick={() => navigate('/forgot-password')}
-                  className="text-xs text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
-                >
-                  Esqueci minha senha
-                </button>
-              </div>
-
-              <button type="submit" disabled={isSubmitting} className="btn-primary">
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    Entrando...
-                  </span>
-                ) : 'Entrar'}
-              </button>
-            </form>
-          )}
-
-          {/* ── Register form ─────────────────────────────────────── */}
-          {mode === 'register' && (
-            <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4" noValidate>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome completo</label>
-                <input
-                  {...registerForm.register('name')}
-                  type="text"
-                  placeholder="Seu nome"
-                  autoComplete="name"
-                  className="input-field"
-                />
-                {registerForm.formState.errors.name && (
-                  <p className="error-text">{registerForm.formState.errors.name.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
-                <input
-                  {...registerForm.register('email')}
-                  type="email"
-                  placeholder="usuario@empresa.com"
-                  autoComplete="email"
-                  className="input-field"
-                />
-                {registerForm.formState.errors.email && (
-                  <p className="error-text">{registerForm.formState.errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
-                <div className="relative">
-                  <input
-                    {...registerForm.register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 8 caracteres"
-                    autoComplete="new-password"
-                    className="input-field pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <IconEye open={showPassword} />
-                  </button>
-                </div>
-                <PasswordStrength password={watchedPassword} />
-                {registerForm.formState.errors.password && (
-                  <p className="error-text">{registerForm.formState.errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirmar senha</label>
-                <div className="relative">
-                  <input
-                    {...registerForm.register('confirmPassword')}
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="Repita a senha"
-                    autoComplete="new-password"
-                    className="input-field pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <IconEye open={showConfirm} />
-                  </button>
-                </div>
-                {registerForm.formState.errors.confirmPassword && (
-                  <p className="error-text">{registerForm.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <button type="submit" disabled={isSubmitting} className="btn-primary">
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    Cadastrando...
-                  </span>
-                ) : 'Criar conta'}
-              </button>
-            </form>
-          )}
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400 uppercase tracking-widest">ou</span>
-            <div className="flex-1 h-px bg-slate-200" />
           </div>
 
-          {/* Mode toggle */}
-          <p className="text-center text-sm text-slate-500">
-            {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
-            <button
-              type="button"
-              onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-              className="text-cyan-600 hover:text-cyan-700 font-semibold transition-colors"
-            >
-              {mode === 'login' ? 'Criar conta' : 'Entrar'}
-            </button>
+          <h1 className="font-display text-[2.75rem] xl:text-[3.15rem] font-bold text-white leading-[1.08] tracking-tight max-w-md">
+            Precatórios sob
+            <span className="block text-cyan-100/95">controle real.</span>
+          </h1>
+          <p className="mt-5 text-cyan-50/75 text-[15px] leading-relaxed max-w-sm">
+            Da proposta à cessão: acompanhe status, documentos e operações em um fluxo único.
           </p>
+        </div>
+
+        {/* Pipeline visual (replaces calendar) */}
+        <div className="relative mt-10 animate-slide-up" style={{ animationDelay: '80ms' }}>
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-100/50 mb-4">Fluxo da esteira</p>
+          <div className="space-y-0">
+            {PIPELINE.map((step, i) => (
+              <div key={step.label} className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="w-8 h-8 rounded-full border border-white/30 bg-white/10 text-white text-xs font-bold flex items-center justify-center backdrop-blur-sm">
+                    {i + 1}
+                  </span>
+                  {i < PIPELINE.length - 1 && (
+                    <span className="w-px flex-1 min-h-[28px] bg-white/20 my-1" />
+                  )}
+                </div>
+                <div className="pb-6">
+                  <p className="text-white text-sm font-semibold leading-none">{step.label}</p>
+                  <p className="text-cyan-100/55 text-xs mt-1.5">{step.hint}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Foot note */}
+        <p className="relative text-[11px] text-cyan-100/45 tracking-wide">
+          Ambiente seguro · Acesso restrito à equipe autorizada
+        </p>
+      </div>
+
+      {/* ── Right: Form panel ────────────────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#f7fafc]">
+        <div className="w-full max-w-[400px] animate-slide-up">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] p-7 sm:p-8">
+
+            {/* Mobile logo */}
+            <div className="flex items-center gap-3 mb-7 lg:hidden">
+              <div className="w-9 h-9 bg-cyan-700 rounded-xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="text-xl font-black text-slate-900 font-display tracking-tight">485</span>
+            </div>
+
+            <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-cyan-700 mb-2">
+              {mode === 'login' ? 'Acesso' : 'Cadastro'}
+            </p>
+            <h2 className="font-display text-[1.65rem] font-bold text-slate-900 tracking-tight mb-1">
+              {mode === 'login' ? 'Entrar na conta' : 'Criar conta'}
+            </h2>
+            <p className="text-slate-500 text-sm mb-7">
+              {mode === 'login'
+                ? 'Use suas credenciais para continuar.'
+                : 'Preencha os dados abaixo para começar.'}
+            </p>
+
+            {apiError && (
+              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 animate-fade-in">
+                {apiError}
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4" noValidate>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
+                  <input
+                    {...loginForm.register('email')}
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    autoComplete="email"
+                    className="input-field"
+                  />
+                  {loginForm.formState.errors.email && (
+                    <p className="error-text">{loginForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
+                  <div className="relative">
+                    <input
+                      {...loginForm.register('password')}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      className="input-field pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <IconEye open={showPassword} />
+                    </button>
+                  </div>
+                  {loginForm.formState.errors.password && (
+                    <p className="error-text">{loginForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end -mt-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-xs text-cyan-700 hover:text-cyan-800 font-medium transition-colors"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+
+                <button type="submit" disabled={isSubmitting} className="btn-primary">
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Entrando...
+                    </span>
+                  ) : 'Entrar'}
+                </button>
+              </form>
+            )}
+
+            {mode === 'register' && (
+              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4" noValidate>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome completo</label>
+                  <input
+                    {...registerForm.register('name')}
+                    type="text"
+                    placeholder="Seu nome"
+                    autoComplete="name"
+                    className="input-field"
+                  />
+                  {registerForm.formState.errors.name && (
+                    <p className="error-text">{registerForm.formState.errors.name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
+                  <input
+                    {...registerForm.register('email')}
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    autoComplete="email"
+                    className="input-field"
+                  />
+                  {registerForm.formState.errors.email && (
+                    <p className="error-text">{registerForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
+                  <div className="relative">
+                    <input
+                      {...registerForm.register('password')}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Mínimo 8 caracteres"
+                      autoComplete="new-password"
+                      className="input-field pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <IconEye open={showPassword} />
+                    </button>
+                  </div>
+                  <PasswordStrength password={watchedPassword} />
+                  {registerForm.formState.errors.password && (
+                    <p className="error-text">{registerForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirmar senha</label>
+                  <div className="relative">
+                    <input
+                      {...registerForm.register('confirmPassword')}
+                      type={showConfirm ? 'text' : 'password'}
+                      placeholder="Repita a senha"
+                      autoComplete="new-password"
+                      className="input-field pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <IconEye open={showConfirm} />
+                    </button>
+                  </div>
+                  {registerForm.formState.errors.confirmPassword && (
+                    <p className="error-text">{registerForm.formState.errors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <button type="submit" disabled={isSubmitting} className="btn-primary">
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Cadastrando...
+                    </span>
+                  ) : 'Criar conta'}
+                </button>
+              </form>
+            )}
+
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">ou</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+
+            <p className="text-center text-sm text-slate-500">
+              {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
+              <button
+                type="button"
+                onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+                className="text-cyan-700 hover:text-cyan-800 font-semibold transition-colors"
+              >
+                {mode === 'login' ? 'Criar conta' : 'Entrar'}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

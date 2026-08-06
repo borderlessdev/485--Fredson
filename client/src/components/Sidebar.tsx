@@ -153,135 +153,146 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
   return (
     <aside
       className={[
-        'shrink-0 flex flex-col h-screen bg-white border-r border-slate-200 select-none',
+        'group/sidebar relative z-20 shrink-0 flex flex-col h-screen bg-white border-r border-slate-200 select-none',
         'transition-[width] duration-200 ease-in-out overflow-hidden',
-        isExpanded ? 'w-[220px]' : 'w-[58px]',
+        isExpanded ? 'w-[232px]' : 'w-[72px]',
       ].join(' ')}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
 
       {/* ── Brand ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2.5 px-[14px] h-[62px] shrink-0">
-        {/* Logo mark: gradient ring + bolt */}
+      <div className={[
+        'flex items-center h-16 shrink-0',
+        isExpanded ? 'gap-3 px-5' : 'justify-center px-3',
+      ].join(' ')}>
         <div className="relative shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-700 to-cyan-500 flex items-center justify-center text-white shadow-sm">
             <IcoBolt />
           </div>
           <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full border-2 border-white" />
         </div>
 
-        <div className={`leading-none overflow-hidden whitespace-nowrap transition-all duration-200 ${
+        <div className={`leading-none overflow-hidden whitespace-nowrap transition-[opacity,width] duration-200 ${
           isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
         }`}>
-          <p className="text-[14px] font-black tracking-tight text-slate-900">485</p>
-          <p className="text-[9px] font-semibold tracking-[0.2em] text-sky-600 uppercase mt-0.5">Gestão</p>
+          <p className="text-[15px] font-black tracking-tight text-slate-900">485</p>
+          <p className="text-[9px] font-semibold tracking-[0.2em] text-sky-600 uppercase mt-1">Gestão</p>
         </div>
       </div>
 
-      {/* ── thin separator ─────────────────────────────────────────────────── */}
-      <div className="mx-4 h-px bg-slate-200 shrink-0" />
+      <div className="mx-4 h-px bg-slate-100 shrink-0" />
 
       {/* ── Navigation ─────────────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-[11px] py-4 space-y-4 scrollbar-none">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.title}>
+      <nav
+        className={[
+          'flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4',
+          '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+          isExpanded ? 'px-3' : 'px-3',
+        ].join(' ')}
+      >
+        <div className="flex flex-col gap-5">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <div
+                className={`flex items-center gap-2 px-2.5 overflow-hidden transition-[opacity,max-height,margin] duration-200 ${
+                  isExpanded ? 'opacity-100 max-h-8 mb-2' : 'opacity-0 max-h-0 mb-0'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${SECTION_COLORS[section.title] ?? 'bg-slate-500'} shrink-0`} />
+                <p className="text-[10px] font-bold tracking-[0.16em] text-slate-400 uppercase whitespace-nowrap">
+                  {section.title}
+                </p>
+              </div>
 
-            {/* Section header: only visible when expanded */}
-            <div
-              className={`flex items-center gap-2 px-2 overflow-hidden transition-all duration-200 ${
-                isExpanded ? 'opacity-100 max-h-8 mb-2.5' : 'opacity-0 max-h-0 mb-0'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${SECTION_COLORS[section.title] ?? 'bg-slate-500'} shrink-0`} />
-              <p className="text-[10px] font-bold tracking-[0.16em] text-slate-400 uppercase whitespace-nowrap">
-                {section.title}
-              </p>
+              <ul className="flex flex-col gap-1.5">
+                {section.items.map(({ label, icon: Icon, href }) => {
+                  const active = pathname === href;
+                  return (
+                    <li key={`${section.title}-${href}-${label}`}>
+                      <button
+                        type="button"
+                        title={!isExpanded ? label : undefined}
+                        aria-label={label}
+                        aria-current={active ? 'page' : undefined}
+                        onClick={() => navigate(href)}
+                        className={[
+                          'w-full flex items-center rounded-xl text-[13px] font-medium',
+                          'transition-[background-color,color,box-shadow] duration-150 group',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300',
+                          isExpanded ? 'gap-3 px-2.5 py-2' : 'justify-center px-0 py-2',
+                          active && isExpanded
+                            ? 'bg-sky-50 text-sky-800 ring-1 ring-sky-100'
+                            : active
+                              ? 'text-sky-700'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
+                        ].join(' ')}
+                      >
+                        <span className={[
+                          'flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-[background-color,color] duration-150',
+                          active
+                            ? 'bg-sky-100 text-sky-700'
+                            : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700',
+                        ].join(' ')}>
+                          <Icon />
+                        </span>
+
+                        <span className={`flex-1 text-left whitespace-nowrap overflow-hidden transition-[opacity,width] duration-150 ${
+                          isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
+                        }`}>{label}</span>
+
+                        {active && isExpanded && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-
-            {/* Items */}
-            <ul className="space-y-0.5">
-              {section.items.map(({ label, icon: Icon, href }) => {
-                const active = pathname === href;
-                return (
-                  <li key={href}>
-                    <button
-                      onClick={() => navigate(href)}
-                      className={[
-                        'w-full flex items-center gap-2.5 px-2 py-[9px] rounded-xl text-[13px] font-medium',
-                        'transition-all duration-150 group',
-                        !isExpanded ? 'justify-center' : '',
-                        active && isExpanded
-                          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 ring-1 ring-blue-100'
-                          : active
-                          ? 'text-blue-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
-                      ].join(' ')}
-                    >
-                      {/* Icon container */}
-                      <span className={[
-                        'flex items-center justify-center w-[30px] h-[30px] rounded-lg shrink-0 transition-all duration-150',
-                        active
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700',
-                      ].join(' ')}>
-                        <Icon />
-                      </span>
-
-                      {/* Label — hidden when collapsed */}
-                      <span className={`flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-150 ${
-                        isExpanded ? 'opacity-100' : 'opacity-0 w-0'
-                      }`}>{label}</span>
-
-                      {/* Active pill indicator */}
-                      {active && isExpanded && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+          ))}
+        </div>
       </nav>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <div className="px-[11px] pb-4 pt-3 shrink-0">
-        <div className="h-px bg-slate-200 mb-3" />
-
-        {/* User card */}
-        <div className={`flex items-center gap-2.5 px-2 py-2.5 rounded-xl mb-1 transition-all duration-200 ${
+      <div className={[
+        'shrink-0 border-t border-slate-100 pb-4 pt-3',
+        isExpanded ? 'px-3' : 'px-3',
+      ].join(' ')}>
+        <div className={[
+          'flex items-center rounded-xl mb-2 transition-[background-color,padding] duration-200',
           isExpanded
-            ? 'bg-slate-50 border border-slate-200'
-            : 'justify-center bg-transparent border border-transparent'
-        }`}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold text-[11px] shrink-0">
+            ? 'gap-2.5 px-2.5 py-2.5 bg-slate-50 border border-slate-100'
+            : 'justify-center px-0 py-1.5 bg-transparent border border-transparent',
+        ].join(' ')}>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-700 to-cyan-500 flex items-center justify-center text-white font-bold text-[11px] shrink-0">
             {initials}
           </div>
-          <div className={`min-w-0 flex-1 overflow-hidden transition-all duration-200 ${
+          <div className={`min-w-0 flex-1 overflow-hidden transition-[opacity,width] duration-200 ${
             isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
           }`}>
             <p className="text-[12px] font-semibold text-slate-800 truncate leading-none whitespace-nowrap">{userName}</p>
             <p className="text-[10px] text-slate-500 truncate mt-1 whitespace-nowrap">{userEmail}</p>
           </div>
-          {/* online dot */}
-          {isExpanded && <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />}
+          {isExpanded && <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0" />}
         </div>
 
-        {/* Logout */}
         <button
+          type="button"
+          aria-label="Sair da conta"
           onClick={onLogout}
-          className={`w-full flex items-center gap-2.5 px-2 py-[9px] rounded-xl text-[13px] font-medium
-                     text-slate-600 hover:text-red-600 hover:bg-red-50
-                     transition-all duration-150 group ${
-            !isExpanded ? 'justify-center' : ''
-          }`}
+          className={[
+            'w-full flex items-center rounded-xl text-[13px] font-medium',
+            'text-slate-600 hover:text-red-600 hover:bg-red-50',
+            'transition-[background-color,color] duration-150 group',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200',
+            isExpanded ? 'gap-3 px-2.5 py-2' : 'justify-center px-0 py-2',
+          ].join(' ')}
         >
-          <span className="flex items-center justify-center w-[30px] h-[30px] rounded-lg bg-slate-100 group-hover:bg-red-100 transition-all duration-150 shrink-0">
+          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-red-100 transition-[background-color] duration-150 shrink-0">
             <IcoLogout />
           </span>
-          <span className={`whitespace-nowrap overflow-hidden transition-all duration-150 ${
+          <span className={`whitespace-nowrap overflow-hidden transition-[opacity,width] duration-150 ${
             isExpanded ? 'opacity-100' : 'opacity-0 w-0'
           }`}>Sair da conta</span>
         </button>

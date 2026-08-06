@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import LineChart from '@/components/charts/LineChart';
 import BarChart from '@/components/charts/BarChart';
+import DashboardCalendar from '@/components/DashboardCalendar';
 import { evolutionDataset, formatCurrencyBRL, statusDataset } from '@/data/dashboardCharts';
 
 // ── Static data ──────────────────────────────────────────────────────────────
@@ -259,43 +260,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Conta */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100">
-                <h3 className="text-lg font-semibold text-slate-900 leading-none">Informacoes da conta</h3>
-                <p className="text-xs text-slate-500 mt-1">Dados do usuario ativo</p>
-              </div>
-
-              {/* User banner */}
-              <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-sky-700 to-cyan-600">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-white/15 border-2 border-white/30 flex items-center justify-center text-white font-bold text-sm select-none">
-                    {initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
-                    <p className="text-xs text-sky-100 truncate mt-0.5">{user?.email}</p>
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-100 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium shrink-0">
-                    Ativo
-                  </span>
-                </div>
-              </div>
-
-              <div className="divide-y divide-slate-50">
-                {[
-                  { label: 'ID do usuario', value: `#${user?.id}`  },
-                  { label: 'Plano',         value: 'Profissional'  },
-                  { label: 'Token JWT',     value: 'Valido'        },
-                  { label: 'Ultimo acesso', value: 'Agora'         },
-                ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between px-5 py-3">
-                    <span className="text-xs text-slate-500">{row.label}</span>
-                    <span className="text-xs font-semibold text-slate-800">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <DashboardCalendar />
 
           </div>
         </main>
