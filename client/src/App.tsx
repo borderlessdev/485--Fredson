@@ -9,6 +9,7 @@ import EsteiraPage from '@/pages/Esteira';
 import CalculadoraPage from '@/pages/Calculadora';
 import GeradorDocsPage from '@/pages/GeradorDocs';
 import ImportarPage from '@/pages/Importar';
+import OperacoesPage from '@/pages/Operacoes';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/calculadora" element={<CalculadoraPage />} />
             <Route path="/gerador-docs" element={<GeradorDocsPage />} />
             <Route path="/importar" element={<ImportarPage />} />
+            <Route path="/precatorios" element={<OperacoesPage />} />
           </Route>
 
           {/* Fallback */}

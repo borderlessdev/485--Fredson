@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
+import { PRECATORIO_STATUS, STATUS_STYLES } from '@/data/status';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ interface ParsedRow {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const STATUS_VALID: string[] = ['Em Análise', 'Captando Investidor', 'Em Negociação', 'Vendido', 'Reprovado'];
+const STATUS_VALID: string[] = [...PRECATORIO_STATUS];
 
 function parseCSV(raw: string): ParsedRow[] {
   const lines = raw.trim().split('\n').filter((l) => l.trim());
@@ -40,14 +41,6 @@ function tryFormatBRL(v: string) {
   const n = parseFloat(v.replace(/[R$. ]/g, '').replace(',', '.'));
   return isNaN(n) ? v : BRL.format(n);
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  'Em Análise':          'bg-amber-50 text-amber-700 border-amber-200',
-  'Captando Investidor': 'bg-violet-50 text-violet-700 border-violet-200',
-  'Em Negociação':       'bg-blue-50 text-blue-700 border-blue-200',
-  'Vendido':             'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Reprovado':           'bg-red-50 text-red-700 border-red-200',
-};
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -248,7 +241,7 @@ export default function ImportarPage() {
                     rows={8}
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    placeholder={`Cole aqui os dados do Excel (Ctrl+V)...\n\nExemplo:\n1234567-00.2024.1.01.0000, 50000, João da Silva, Em Análise\n9876543-00.2023.1.01.0000, 120000, Maria Souza, Vendido`}
+                    placeholder={`Cole aqui os dados do Excel (Ctrl+V)...\n\nExemplo:\n1234567-00.2024.1.01.0000, 50000, João da Silva, Em Análise\n9876543-00.2023.1.01.0000, 120000, Maria Souza, Concluído`}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-700 placeholder-slate-400
                                focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all resize-none leading-relaxed"
                   />

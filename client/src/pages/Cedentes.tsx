@@ -2,10 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
+import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type StatusEsteira = 'Em Análise' | 'Captando Investidor' | 'Vendido' | 'Reprovado' | 'Em Negociação';
 type EstadoCivil = 'Solteiro(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viúvo(a)' | 'União Estável';
 
 interface DadosBancarios {
@@ -32,7 +32,7 @@ interface Cedente {
   email: string;
   telefone: string;
   origemLead: string;
-  statusEsteira: StatusEsteira;
+  statusEsteira: PrecatorioStatus;
   dadosBancarios: DadosBancarios;
   processo: string;
   valorFace: number;
@@ -46,7 +46,7 @@ const SEED: Cedente[] = [
   {
     id: 1, nome: 'MARIO LUIZ SOUZA BRANDAO', cpf: '123.456.789-00',
     estadoCivil: 'Casado(a)', email: 'mario@email.com', telefone: '(11) 99999-0001',
-    origemLead: 'Indicação', statusEsteira: 'Vendido',
+    origemLead: 'Indicação', statusEsteira: 'Concluído',
     dadosBancarios: { banco: 'Bradesco', agencia: '1234', conta: '56789-0', tipoConta: 'Corrente', pix: '12345678900' },
     processo: '1007017-64.2021.4.01.3300', valorFace: 66000, arquivos: [], cadastradoEm: '2026-02-05',
   },
@@ -60,7 +60,7 @@ const SEED: Cedente[] = [
   {
     id: 3, nome: 'ARMANDO BERNARDES NETO', cpf: '111.222.333-44',
     estadoCivil: 'Divorciado(a)', email: 'armando@email.com', telefone: '(31) 97777-0003',
-    origemLead: 'WhatsApp', statusEsteira: 'Em Análise',
+    origemLead: 'WhatsApp', statusEsteira: 'Aguardando Proposta',
     dadosBancarios: { banco: 'Caixa', agencia: '0001', conta: '00001234-5', tipoConta: 'Corrente', pix: '11122233344' },
     processo: '0039519-60.2004.4.01.3400', valorFace: 45000, arquivos: [], cadastradoEm: '2026-02-03',
   },
@@ -69,21 +69,6 @@ const SEED: Cedente[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const STATUS_STYLES: Record<StatusEsteira, string> = {
-  'Em Análise':         'bg-amber-50 text-amber-700 border border-amber-200',
-  'Vendido':            'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  'Em Negociação':      'bg-blue-50 text-blue-700 border border-blue-200',
-  'Reprovado':          'bg-red-50 text-red-700 border border-red-200',
-  'Captando Investidor':'bg-violet-50 text-violet-700 border border-violet-200',
-};
-const STATUS_DOT: Record<StatusEsteira, string> = {
-  'Em Análise':         'bg-amber-400',
-  'Vendido':            'bg-emerald-400',
-  'Em Negociação':      'bg-blue-400',
-  'Reprovado':          'bg-red-400',
-  'Captando Investidor':'bg-violet-400',
-};
 
 function formatBytes(b: number) {
   if (b < 1024) return `${b} B`;
@@ -203,8 +188,8 @@ function CedenteDrawer({
                 </Field>
                 <Field label="Status da Esteira">
                   <div className="relative">
-                    <select className={selectCls} value={form.statusEsteira} onChange={(e) => set('statusEsteira', e.target.value as StatusEsteira)}>
-                      {(['Em Análise', 'Captando Investidor', 'Em Negociação', 'Vendido', 'Reprovado'] as StatusEsteira[]).map((s) => (
+                    <select className={selectCls} value={form.statusEsteira} onChange={(e) => set('statusEsteira', e.target.value as PrecatorioStatus)}>
+                      {PRECATORIO_STATUS.map((s) => (
                         <option key={s}>{s}</option>
                       ))}
                     </select>
@@ -390,7 +375,7 @@ export default function CedentesPage() {
     setEditing(novo);
   }
 
-  const statusOptions = ['Todos', 'Em Análise', 'Captando Investidor', 'Em Negociação', 'Vendido', 'Reprovado'];
+  const statusOptions = ['Todos', ...PRECATORIO_STATUS];
 
   const filtered = cedentes.filter((c) => {
     const q = search.toLowerCase();
@@ -488,7 +473,7 @@ export default function CedentesPage() {
                   <div className="py-4 pr-3 text-[12px] text-slate-600 truncate">{c.origemLead || '—'}</div>
                   <div className="py-4 pr-3">
                     <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold ${STATUS_STYLES[c.statusEsteira]}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[c.statusEsteira]}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOTS[c.statusEsteira]}`} />
                       {c.statusEsteira}
                     </span>
                   </div>

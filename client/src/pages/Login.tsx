@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import LoginCalendar from '@/components/LoginCalendar';
 import { getAuthErrorMessage, login, register } from '@/services/auth';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -153,19 +154,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="relative grid grid-cols-2 gap-3">
-          {[
-            { value: '1.200+', label: 'Projetos gerenciados' },
-            { value: '300+',   label: 'Clientes atendidos'  },
-            { value: '99.9%',  label: 'Uptime garantido'    },
-            { value: '8.000+', label: 'Documentos gerados'  },
-          ].map((s) => (
-            <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4">
-              <p className="text-2xl font-bold text-white">{s.value}</p>
-              <p className="text-white/60 text-xs mt-0.5">{s.label}</p>
-            </div>
-          ))}
+        {/* Calendar */}
+        <div className="relative max-w-sm">
+          <LoginCalendar />
         </div>
       </div>
 

@@ -10,12 +10,14 @@ export const evolutionDataset: EvolutionPoint[] = [
 ];
 
 export const statusDataset: StatusPoint[] = [
-  { status: 'Proposta', quantidade: 10, valorTotal: 1820000 },
-  { status: 'Pago', quantidade: 10, valorTotal: 6490000 },
-  { status: 'Aguard.', quantidade: 4, valorTotal: 970000 },
-  { status: 'Analise', quantidade: 3, valorTotal: 740000 },
-  { status: 'Rejeit.', quantidade: 2, valorTotal: 420000 },
-  { status: 'Sessao', quantidade: 1, valorTotal: 210000 },
+  { status: 'Aguard. Prop.', quantidade: 4, valorTotal: 970000 },
+  { status: 'Prop. Env.', quantidade: 10, valorTotal: 1820000 },
+  { status: 'Prop. Rej.', quantidade: 2, valorTotal: 420000 },
+  { status: 'Aguard. Docs', quantidade: 3, valorTotal: 680000 },
+  { status: 'Em Análise', quantidade: 5, valorTotal: 740000 },
+  { status: 'Aprovado', quantidade: 4, valorTotal: 1100000 },
+  { status: 'Em Cessão', quantidade: 3, valorTotal: 890000 },
+  { status: 'Concluído', quantidade: 8, valorTotal: 6490000 },
 ];
 
 export const formatCurrencyBRL = (value: number) =>

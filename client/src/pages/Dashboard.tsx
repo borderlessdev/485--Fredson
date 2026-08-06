@@ -7,19 +7,19 @@ import { evolutionDataset, formatCurrencyBRL, statusDataset } from '@/data/dashb
 
 // ── Static data ──────────────────────────────────────────────────────────────
 const recentActivity = [
-  { id: 1, action: 'Proposta enviada',     client: 'Empresa Alpha', time: 'ha 2h',  status: 'Enviada'   },
-  { id: 2, action: 'Pagamento confirmado', client: 'Beta Corp',     time: 'ha 4h',  status: 'Pago'      },
-  { id: 3, action: 'Nova negociacao',      client: 'Gama Ltda.',    time: 'ha 6h',  status: 'Analise'   },
-  { id: 4, action: 'Documento gerado',     client: 'Delta S.A.',    time: 'ontem',  status: 'Concluido' },
-  { id: 5, action: 'Proposta rejeitada',   client: 'Epsilon Tech',  time: 'ontem',  status: 'Rejeitada' },
+  { id: 1, action: 'Proposta enviada',     client: 'Empresa Alpha', time: 'ha 2h',  status: 'Proposta Enviada'   },
+  { id: 2, action: 'Cessão concluída',     client: 'Beta Corp',     time: 'ha 4h',  status: 'Concluído'         },
+  { id: 3, action: 'Nova análise',         client: 'Gama Ltda.',    time: 'ha 6h',  status: 'Em Análise'        },
+  { id: 4, action: 'Documentos pendentes', client: 'Delta S.A.',    time: 'ontem',  status: 'Aguardando Documentos' },
+  { id: 5, action: 'Proposta rejeitada',   client: 'Epsilon Tech',  time: 'ontem',  status: 'Proposta Rejeitada' },
 ];
 
 const statusColors: Record<string, string> = {
-  Enviada:   'bg-blue-50 text-blue-700 border border-blue-100',
-  Pago:      'bg-emerald-50 text-emerald-700 border border-emerald-100',
-  Analise:   'bg-amber-50 text-amber-700 border border-amber-100',
-  Concluido: 'bg-sky-50 text-sky-700 border border-sky-100',
-  Rejeitada: 'bg-red-50 text-red-700 border border-red-100',
+  'Proposta Enviada':      'bg-blue-50 text-blue-700 border border-blue-100',
+  'Concluído':             'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  'Em Análise':            'bg-amber-50 text-amber-700 border border-amber-100',
+  'Aguardando Documentos': 'bg-orange-50 text-orange-700 border border-orange-100',
+  'Proposta Rejeitada':    'bg-red-50 text-red-700 border border-red-100',
 };
 
 const stats = [
@@ -103,9 +103,9 @@ export default function DashboardPage() {
   }
 
   const totalRegistros = evolutionDataset.reduce((acc, current) => acc + current.total, 0);
-  const totalPagos = statusDataset.find((item) => item.status === 'Pago')?.quantidade ?? 0;
+  const totalConcluidos = statusDataset.find((item) => item.status === 'Concluído')?.quantidade ?? 0;
   const conversao = totalRegistros > 0
-    ? `${((totalPagos / totalRegistros) * 100).toFixed(1).replace('.', ',')}%`
+    ? `${((totalConcluidos / totalRegistros) * 100).toFixed(1).replace('.', ',')}%`
     : '0%';
 
   return (
@@ -168,14 +168,14 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-white rounded-xl border border-slate-200 px-5 py-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-sky-500 rounded-full" />
-              <span className="text-sm text-slate-600">Conversao (Pago):</span>
+              <span className="text-sm text-slate-600">Conversao (Concluído):</span>
               <span className="text-sm font-bold text-slate-900">{conversao}</span>
             </div>
             <div className="w-px h-4 bg-slate-200" />
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-sm text-slate-600">Pagos:</span>
-              <span className="text-sm font-bold text-slate-900">{totalPagos}</span>
+              <span className="text-sm text-slate-600">Concluídos:</span>
+              <span className="text-sm font-bold text-slate-900">{totalConcluidos}</span>
             </div>
             <div className="w-px h-4 bg-slate-200" />
             <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-slate-500 mt-1">Projetos criados por mes (ultimos 6)</p>
                 </div>
                 <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg ring-1 ring-sky-100">
-                  Pago: {totalPagos}
+                  Concluído: {totalConcluidos}
                 </span>
               </div>
               <LineChart
