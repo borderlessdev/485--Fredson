@@ -115,7 +115,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Cadastros',
     items: [
-      { label: 'Precatorios',  icon: IcoPrecatorios,  href: '/precatorios'  },
+      { label: 'Meus Precatórios', icon: IcoPrecatorios, href: '/precatorios' },
       { label: 'Cedentes',     icon: IcoCedentes,     href: '/cedentes'     },
       { label: 'Investidores', icon: IcoInvestidores, href: '/investidores' },
     ],

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
-import { PRECATORIO_STATUS, STATUS_STYLES } from '@/data/status';
+import { PRECATORIO_STATUS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -312,7 +312,7 @@ export default function ImportarPage() {
                             </td>
                             <td className="px-4 py-3 text-[12px] text-slate-700 max-w-[160px] truncate">{r.cedente || <em className="text-red-400 not-italic">vazio</em>}</td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-semibold ${STATUS_STYLES[r.status] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-semibold ${STATUS_STYLES[r.status as PrecatorioStatus] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                                 {r.status}
                               </span>
                             </td>
