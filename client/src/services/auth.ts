@@ -8,11 +8,13 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { normalizeRole, roleFromEmail, type UserRole } from '@/data/roles';
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
 }
 
 export interface LoginPayload {
@@ -57,17 +59,17 @@ export function getAuthErrorMessage(error: unknown): string {
   return 'Erro inesperado. Tente novamente.';
 }
 
-async function upsertUserProfile(user: AuthUser): Promise<void> {
-  await setDoc(
-    doc(db, 'users', user.id),
-    {
-      name: user.name,
-      email: user.email,
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+async function upsertUserProfile(user: AuthUser, options?: { role?: UserRole; setRole?: boolean }): Promise<void> {
+  const payload: Record<string, unknown> = {
+    name: user.name,
+    email: user.email,
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  };
+  if (options?.setRole && options.role) {
+    payload.role = options.role;
+  }
+  await setDoc(doc(db, 'users', user.id), payload, { merge: true });
 }
 
 async function resolveCurrentUser(): Promise<AuthUser> {
@@ -78,18 +80,26 @@ async function resolveCurrentUser(): Promise<AuthUser> {
 
   const profileDoc = await getDoc(doc(db, 'users', currentUser.uid));
   const profile = profileDoc.data();
+  const email = currentUser.email ?? '';
+  const fromProfile = profile?.role != null ? normalizeRole(profile.role) : null;
+  const fromEmail = roleFromEmail(email);
+  // Perfil antigo sem role: mantém admin se veio do map de e-mail; caso contrário colaborador
+  const role = fromProfile ?? fromEmail ?? 'collaborator';
 
   return {
     id: currentUser.uid,
     name: (profile?.name as string | undefined) ?? currentUser.displayName ?? 'Usuário',
-    email: currentUser.email ?? '',
+    email,
+    role,
   };
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   await signInWithEmailAndPassword(auth, payload.email, payload.password);
   const user = await resolveCurrentUser();
-  await upsertUserProfile(user);
+  const profileDoc = await getDoc(doc(db, 'users', user.id));
+  const needsRole = !profileDoc.exists() || profileDoc.data()?.role == null;
+  await upsertUserProfile(user, needsRole ? { setRole: true, role: user.role } : undefined);
   return { user };
 }
 
@@ -100,8 +110,9 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
     id: credential.user.uid,
     name: payload.name,
     email: payload.email,
+    role: 'admin',
   };
-  await upsertUserProfile(user);
+  await upsertUserProfile(user, { setRole: true, role: 'admin' });
   return { user };
 }
 

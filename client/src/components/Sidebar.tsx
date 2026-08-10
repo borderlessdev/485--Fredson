@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { type ComponentType } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { canAccessRoute, isCollaborator, roleLabel, type UserRole } from '@/data/roles';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -140,9 +142,18 @@ const SECTION_COLORS: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps) {
-  const navigate    = useNavigate();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const role: UserRole = user?.role ?? 'admin';
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const sections = useMemo(() => {
+    return NAV_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => canAccessRoute(role, item.href)),
+    })).filter((section) => section.items.length > 0);
+  }, [role]);
 
   const initials = userName
     .split(' ')
@@ -192,7 +203,7 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
         ].join(' ')}
       >
         <div className="flex flex-col gap-5">
-          {NAV_SECTIONS.map((section) => (
+          {sections.map((section) => (
             <div key={section.title}>
               <div
                 className={`flex items-center gap-2 px-2.5 overflow-hidden transition-[opacity,max-height,margin] duration-200 ${
@@ -273,6 +284,11 @@ export default function Sidebar({ onLogout, userName, userEmail }: SidebarProps)
           }`}>
             <p className="text-[12px] font-semibold text-slate-800 truncate leading-none whitespace-nowrap">{userName}</p>
             <p className="text-[10px] text-slate-500 truncate mt-1 whitespace-nowrap">{userEmail}</p>
+            {isCollaborator(role) && (
+              <p className="mt-1.5 inline-flex rounded-md bg-sky-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700 ring-1 ring-sky-100">
+                {roleLabel(role)}
+              </p>
+            )}
           </div>
           {isExpanded && <span className="w-2 h-2 bg-emerald-400 rounded-full shrink-0" />}
         </div>

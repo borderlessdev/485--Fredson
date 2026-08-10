@@ -20,14 +20,18 @@ VITE_FIREBASE_MEASUREMENT_ID=G-G68ZHLEMD8
 
 ## Usuarios seed (Firebase Auth)
 
-- Admin: `admin@485.com` / `Admin@485`
-- Operador: `operador@485.com` / `Operador@485`
+- Admin: `admin@485.com` / `Admin@485` (acesso completo)
+- Operador: `operador@485.com` / `Operador@485` (acesso completo)
+- Colaborador: `colaborador@485.com` / `Colaborador@485`
+  - Sidebar apenas: **Dashboard**, **Cedentes**, **Esteira**, **Calculadora**
+  - Rotas bloqueadas (ex.: precatórios, importar, gerador) redirecionam para `/dashboard`
 
 ## Dados seed (Firestore)
 
 - Coleção `users`:
   - documento `<uid-do-admin>` com role `admin`
   - documento `<uid-do-operador>` com role `operator`
+  - documento `<uid-do-colaborador>` com role `collaborator`
 - Coleção `app_meta`:
   - documento `seed` com `seededAt` e `seededBy`
 - Coleção `precatorios` (por usuário logado):
@@ -48,6 +52,14 @@ npx firebase deploy --only firestore:rules --project fredson-bf42c
 ```bash
 npm run seed:firebase
 ```
+
+## Zerar dados do colaborador
+
+```bash
+cd client && npm run clear:colaborador
+```
+
+Remove precatórios do `colaborador@485.com` e reseta o perfil (mantém role `collaborator`).
 
 ## Observacao de seguranca
 

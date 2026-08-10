@@ -18,8 +18,9 @@ const firebaseConfig = {
 };
 
 const SEED_USERS = [
-  { name: 'Admin 485', email: 'admin@485.com', password: 'Admin@485' },
-  { name: 'Operador 485', email: 'operador@485.com', password: 'Operador@485' },
+  { name: 'Admin 485', email: 'admin@485.com', password: 'Admin@485', role: 'admin' },
+  { name: 'Operador 485', email: 'operador@485.com', password: 'Operador@485', role: 'operator' },
+  { name: 'Colaborador 485', email: 'colaborador@485.com', password: 'Colaborador@485', role: 'collaborator' },
 ];
 
 const app = initializeApp(firebaseConfig);
@@ -41,7 +42,7 @@ async function upsertUserProfile(uid, name, email, role) {
   );
 }
 
-async function ensureUser(user, role) {
+async function ensureUser(user) {
   let credential;
 
   try {
@@ -56,29 +57,41 @@ async function ensureUser(user, role) {
     }
   }
 
-  await upsertUserProfile(credential.user.uid, user.name, user.email, role);
+  // Garante token fresco para o Firestore respeitar as regras
+  await credential.user.getIdToken(true);
+  await upsertUserProfile(credential.user.uid, user.name, user.email, user.role);
+  console.log(`profile upserted: ${user.email} (${user.role})`);
   await signOut(auth);
 }
 
 async function seed() {
   try {
-    await ensureUser(SEED_USERS[0], 'admin');
-    await ensureUser(SEED_USERS[1], 'operator');
+    for (const user of SEED_USERS) {
+      await ensureUser(user);
+    }
 
-    await setDoc(
-      doc(db, 'app_meta', 'seed'),
-      {
-        projectId: firebaseConfig.projectId,
-        seededAt: serverTimestamp(),
-        seededBy: 'firebase-seed-script',
-      },
-      { merge: true }
-    );
+    try {
+      const admin = SEED_USERS[0];
+      const cred = await signInWithEmailAndPassword(auth, admin.email, admin.password);
+      await cred.user.getIdToken(true);
+      await setDoc(
+        doc(db, 'app_meta', 'seed'),
+        {
+          projectId: firebaseConfig.projectId,
+          seededAt: serverTimestamp(),
+          seededBy: 'firebase-seed-script',
+        },
+        { merge: true },
+      );
+      await signOut(auth);
+    } catch (metaErr) {
+      console.warn('app_meta seed skipped (rules):', metaErr?.code ?? metaErr);
+    }
 
     console.log('\nseed complete');
     console.log('users:');
     for (const user of SEED_USERS) {
-      console.log(`- ${user.email} / ${user.password}`);
+      console.log(`- ${user.email} / ${user.password} (${user.role})`);
     }
     process.exit(0);
   } catch (error) {

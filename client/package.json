@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "seed:firebase": "node scripts/seed-firebase.mjs"
+    "seed:firebase": "node scripts/seed-firebase.mjs",
+    "clear:colaborador": "node scripts/clear-collaborator-data.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
