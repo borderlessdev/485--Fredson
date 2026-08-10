@@ -25,11 +25,23 @@ VITE_FIREBASE_MEASUREMENT_ID=G-G68ZHLEMD8
 
 ## Dados seed (Firestore)
 
-- Colecao `users`:
+- Coleção `users`:
   - documento `<uid-do-admin>` com role `admin`
   - documento `<uid-do-operador>` com role `operator`
-- Colecao `app_meta`:
+- Coleção `app_meta`:
   - documento `seed` com `seededAt` e `seededBy`
+- Coleção `precatorios` (por usuário logado):
+  - `userId`, `cotacao`, `status`, `form` (wizard completo), `comissaoPct`, `ofertaPct`
+  - CRUD pelo app em **Meus Precatórios** (`client/src/services/precatorios.ts`)
+  - Na primeira visita com lista vazia, o app grava 3 demos no Firestore
+
+## Regras (Firestore)
+
+Arquivo: `firestore.rules` — cada usuário só lê/escreve os próprios `precatorios` e o próprio `users/{uid}`.
+
+```bash
+npx firebase deploy --only firestore:rules --project fredson-bf42c
+```
 
 ## Comando para rodar seed novamente
 

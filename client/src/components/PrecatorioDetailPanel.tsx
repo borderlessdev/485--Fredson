@@ -1,28 +1,21 @@
 import { useMemo, useState } from 'react';
-import type { PrecatorioFormData } from '@/data/precatorioForm';
 import { parseMoney } from '@/data/precatorioForm';
 import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
 import { openProjef } from '@/data/projef';
 import ProjefImportPanel from '@/components/ProjefImportPanel';
+import type { PrecatorioRecord } from '@/services/precatorios';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-export interface PrecatorioRecord {
-  id: number;
-  cotacao: string;
-  cadastradoEm: string;
-  status: PrecatorioStatus;
-  data: PrecatorioFormData;
-  comissaoPct: number;
-  ofertaPct: number;
-}
+export type { PrecatorioRecord };
 
 interface Props {
   record: PrecatorioRecord;
   onClose: () => void;
   onEdit: () => void;
-  onStatusChange: (id: number, status: PrecatorioStatus) => void;
-  onValorUpdate: (id: number, principal: number) => void;
+  onStatusChange: (id: string, status: PrecatorioStatus) => void;
+  onValorUpdate: (id: string, principal: number) => void;
+  onQuoteChange?: (id: string, ofertaPct: number, comissaoPct: number) => void;
 }
 
 export default function PrecatorioDetailPanel({
@@ -31,6 +24,7 @@ export default function PrecatorioDetailPanel({
   onEdit,
   onStatusChange,
   onValorUpdate,
+  onQuoteChange,
 }: Props) {
   const d = record.data;
   const principal = parseMoney(d.principal);
@@ -54,6 +48,7 @@ export default function PrecatorioDetailPanel({
   }, [face, principal, pctCredor, ofertaPct, comissaoPct]);
 
   function recalcular() {
+    onQuoteChange?.(record.id, ofertaPct, comissaoPct);
     setFlash(true);
     window.setTimeout(() => setFlash(false), 700);
   }
@@ -275,6 +270,7 @@ export default function PrecatorioDetailPanel({
               <button
                 type="button"
                 onClick={() => {
+                  onQuoteChange?.(record.id, ofertaPct, comissaoPct);
                   onStatusChange(record.id, status);
                   onClose();
                 }}

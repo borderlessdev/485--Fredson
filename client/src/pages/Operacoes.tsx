@@ -3,177 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import PrecatorioWizard from '@/components/PrecatorioWizard';
-import PrecatorioDetailPanel, { type PrecatorioRecord } from '@/components/PrecatorioDetailPanel';
+import PrecatorioDetailPanel from '@/components/PrecatorioDetailPanel';
 import {
-  emptyForm,
   formatMoneyInput,
   parseMoney,
   type PrecatorioFormData,
 } from '@/data/precatorioForm';
 import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
-
-// ── Seed ──────────────────────────────────────────────────────────────────────
-
-function seed(): PrecatorioRecord[] {
-  const base = (partial: Partial<PrecatorioFormData>): PrecatorioFormData => ({
-    ...emptyForm(),
-    ...partial,
-  });
-
-  return [
-    {
-      id: 30,
-      cotacao: '#592030',
-      cadastradoEm: '2026-03-24 14:22:04',
-      status: 'Em Análise',
-      comissaoPct: 1,
-      ofertaPct: 71.05,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF1',
-        oficioNome: 'oficio-4634.pdf',
-        documento: '042.443.101-06',
-        requerente: 'CICERA BARBOSA SOUZA E OUTRO(A)',
-        requerido: 'UNIAO FEDERAL',
-        natureza: 'Alimentar',
-        vara: 'CCJ BRASILIA',
-        status: 'Em Análise',
-        estadoUF: 'DF',
-        estadoNome: 'Distrito Federal',
-        cidade: 'Brasília',
-        dataBase: '2022-03-01',
-        dataExpedicao: '2025-12-04',
-        principal: '55.104,50',
-        juros: '86.084,80',
-        codigoProcesso: '0002741-20.2022.4.01.3400',
-        cumprimentoSentenca: '0002741-20.2022.4.01.3400',
-        descontos: [{ id: '1', categoria: 'RRA', tipoValor: 'Inteiro', quantidade: '35' }],
-        confirmado: true,
-      }),
-    },
-    {
-      id: 28,
-      cotacao: '#592028',
-      cadastradoEm: '2026-02-05 17:07:00',
-      status: 'Concluído',
-      comissaoPct: 1.2,
-      ofertaPct: 68,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF1',
-        documento: '123.456.789-00',
-        requerente: 'MARIO LUIZ SOUZA CARDOSO',
-        requerido: 'UNIAO FEDERAL',
-        natureza: 'Comum',
-        status: 'Concluído',
-        principal: '33.000,00',
-        juros: '33.000,00',
-        codigoProcesso: '1007017-64.2021.4.01.3300',
-        confirmado: true,
-      }),
-    },
-    {
-      id: 25,
-      cotacao: '#592025',
-      cadastradoEm: '2026-02-03 17:33:37',
-      status: 'Em Análise',
-      comissaoPct: 1,
-      ofertaPct: 72,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF1',
-        requerente: 'LIA MARCIA DA SILVA SANTOS',
-        requerido: 'INSS',
-        natureza: 'Alimentar',
-        status: 'Em Análise',
-        principal: '247.432,05',
-        juros: '247.567,95',
-        codigoProcesso: '10194248820244013400',
-        confirmado: true,
-      }),
-    },
-    {
-      id: 24,
-      cotacao: '#592024',
-      cadastradoEm: '2026-02-03 13:04:06',
-      status: 'Aguardando Documentos',
-      comissaoPct: 1,
-      ofertaPct: 70,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF1',
-        requerente: 'IVETTE MAURELLI DIAS',
-        requerido: 'UNIAO FEDERAL',
-        natureza: 'Alimentar',
-        status: 'Aguardando Documentos',
-        principal: '91.744,85',
-        juros: '91.255,15',
-        codigoProcesso: '0039519-60.2004.4.01.3400',
-        confirmado: true,
-      }),
-    },
-    {
-      id: 23,
-      cotacao: '#592023',
-      cadastradoEm: '2026-02-03 12:58:31',
-      status: 'Aguardando Proposta',
-      comissaoPct: 1,
-      ofertaPct: 70,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF1',
-        requerente: 'ARMANDO BERNARDES NETO',
-        requerido: 'UNIAO FEDERAL',
-        natureza: 'Comum',
-        status: 'Aguardando Proposta',
-        principal: '22.935,55',
-        juros: '22.064,45',
-        codigoProcesso: '0039519-60.2004.4.01.3400',
-        confirmado: true,
-      }),
-    },
-    {
-      id: 20,
-      cotacao: '#592020',
-      cadastradoEm: '2026-01-30 15:13:59',
-      status: 'Em Cessão',
-      comissaoPct: 0.8,
-      ofertaPct: 75,
-      data: base({
-        tipo: 'Estadual',
-        tribunal: 'TJCE',
-        requerente: 'FRANCISCO HENRIQUE COSTA',
-        requerido: 'ESTADO DO CEARA',
-        natureza: 'Alimentar',
-        status: 'Em Cessão',
-        principal: '22.808,48',
-        juros: '22.191,52',
-        codigoProcesso: '3000365-32.2023.8.06.0041',
-        confirmado: true,
-      }),
-    },
-    {
-      id: 16,
-      cotacao: '#592016',
-      cadastradoEm: '2026-01-27 16:45:10',
-      status: 'Proposta Rejeitada',
-      comissaoPct: 1,
-      ofertaPct: 65,
-      data: base({
-        tipo: 'Federal',
-        tribunal: 'TRF3',
-        requerente: 'MARIA APARECIDA ROCHA',
-        requerido: 'UNIAO FEDERAL',
-        natureza: 'Comum',
-        status: 'Proposta Rejeitada',
-        principal: '18.750,00',
-        juros: '18.250,00',
-        codigoProcesso: '0091234-55.2020.4.03.0000',
-        confirmado: true,
-      }),
-    },
-  ];
-}
+import {
+  createPrecatorio,
+  listPrecatorios,
+  seedDemoPrecatoriosIfEmpty,
+  updatePrecatorio,
+  type PrecatorioRecord,
+} from '@/services/precatorios';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -236,12 +79,15 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 export default function OperacoesPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [ops, setOps] = useState<PrecatorioRecord[]>(() => seed());
+  const [ops, setOps] = useState<PrecatorioRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [filterTribunal, setFilterTribunal] = useState('Todos');
-  const [wizard, setWizard] = useState<{ mode: 'create' | 'edit'; initial?: PrecatorioFormData; editId?: number } | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [wizard, setWizard] = useState<{ mode: 'create' | 'edit'; initial?: PrecatorioFormData; editId?: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
 
   const selected = ops.find((o) => o.id === selectedId) ?? null;
@@ -251,6 +97,38 @@ export default function OperacoesPage() {
     const t = window.setTimeout(() => setToast(''), 3500);
     return () => window.clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) {
+        setOps([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError('');
+      try {
+        const rows = await seedDemoPrecatoriosIfEmpty();
+        if (!cancelled) setOps(rows);
+      } catch (e) {
+        console.error(e);
+        try {
+          const rows = await listPrecatorios();
+          if (!cancelled) setOps(rows);
+        } catch (err) {
+          console.error(err);
+          if (!cancelled) setError('Não foi possível carregar os precatórios do Firebase.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   function handleLogout() {
     signOut();
@@ -285,36 +163,67 @@ export default function OperacoesPage() {
     return { total: ops.length, emAnalise, totalFace };
   }, [ops]);
 
-  function handleSave(data: PrecatorioFormData) {
-    if (wizard?.mode === 'edit' && wizard.editId != null) {
-      setOps((prev) =>
-        prev.map((op) =>
-          op.id === wizard.editId
-            ? { ...op, status: (data.status || op.status) as PrecatorioStatus, data }
-            : op,
-        ),
-      );
-      setSelectedId(wizard.editId);
-      setToast('O precatório foi atualizado com sucesso.');
-    } else {
-      const nextId = Math.max(...ops.map((o) => o.id), 0) + 1;
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const cadastradoEm = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-      const record: PrecatorioRecord = {
-        id: nextId,
-        cotacao: `#${590000 + nextId}`,
-        cadastradoEm,
-        status: (data.status || 'Aguardando Proposta') as PrecatorioStatus,
-        comissaoPct: 1,
-        ofertaPct: 70,
-        data,
-      };
-      setOps((prev) => [record, ...prev]);
-      setSelectedId(nextId);
-      setToast('O precatório foi salvo com sucesso!');
+  async function handleSave(data: PrecatorioFormData) {
+    setSaving(true);
+    setError('');
+    try {
+      if (wizard?.mode === 'edit' && wizard.editId) {
+        await updatePrecatorio(wizard.editId, { data, status: (data.status || undefined) as PrecatorioStatus | undefined });
+        setOps((prev) =>
+          prev.map((op) =>
+            op.id === wizard.editId
+              ? { ...op, status: (data.status || op.status) as PrecatorioStatus, data }
+              : op,
+          ),
+        );
+        setSelectedId(wizard.editId);
+        setToast('O precatório foi atualizado no Firebase.');
+      } else {
+        const record = await createPrecatorio({ data });
+        setOps((prev) => [record, ...prev]);
+        setSelectedId(record.id);
+        setToast('O precatório foi salvo no Firebase.');
+      }
+      setWizard(null);
+    } catch (e) {
+      console.error(e);
+      setError('Falha ao salvar no Firebase. Verifique as regras e a conexão.');
+    } finally {
+      setSaving(false);
     }
-    setWizard(null);
+  }
+
+  async function persistStatus(id: string, status: PrecatorioStatus) {
+    setOps((prev) => prev.map((op) => (op.id === id ? { ...op, status, data: { ...op.data, status } } : op)));
+    try {
+      await updatePrecatorio(id, { status });
+    } catch (e) {
+      console.error(e);
+      setError('Não foi possível atualizar o status.');
+    }
+  }
+
+  async function persistValor(id: string, principal: number) {
+    const formatted = formatMoneyInput(principal);
+    setOps((prev) =>
+      prev.map((op) => (op.id === id ? { ...op, data: { ...op.data, principal: formatted } } : op)),
+    );
+    try {
+      await updatePrecatorio(id, { principal });
+    } catch (e) {
+      console.error(e);
+      setError('Não foi possível atualizar o valor.');
+    }
+  }
+
+  async function persistQuote(id: string, ofertaPct: number, comissaoPct: number) {
+    setOps((prev) => prev.map((op) => (op.id === id ? { ...op, ofertaPct, comissaoPct } : op)));
+    try {
+      await updatePrecatorio(id, { ofertaPct, comissaoPct });
+    } catch (e) {
+      console.error(e);
+      setError('Não foi possível salvar a cotação.');
+    }
   }
 
   return (
@@ -329,16 +238,17 @@ export default function OperacoesPage() {
           />
           <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">Monitor</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">Monitor · Firebase</p>
               <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">Meus Precatórios</h1>
               <p className="mt-1 max-w-xl text-sm text-slate-500">
-                Cadastre em fluxo guiado, revise etapas e recalcule propostas com precisão.
+                Dados persistidos em tempo real no Firestore da sua conta.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setWizard({ mode: 'create' })}
-              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-all hover:bg-sky-700 hover:shadow-md"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-all hover:bg-sky-700 hover:shadow-md disabled:opacity-60"
             >
               <IcoPlus />
               Novo precatório
@@ -410,6 +320,11 @@ export default function OperacoesPage() {
               </button>
             )}
           </div>
+          {error && (
+            <p role="alert" className="mt-2 text-xs font-medium text-rose-600">
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="flex-1 overflow-auto px-6 py-5">
@@ -422,7 +337,9 @@ export default function OperacoesPage() {
               ))}
             </div>
 
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="px-6 py-16 text-center text-sm text-slate-500">Carregando precatórios…</div>
+            ) : filtered.length === 0 ? (
               <div className="px-6 py-20 text-center">
                 <p className="font-display text-lg font-semibold text-slate-800">Nenhum precatório encontrado</p>
                 <p className="mt-1 text-sm text-slate-500">Ajuste os filtros ou cadastre um novo.</p>
@@ -450,7 +367,9 @@ export default function OperacoesPage() {
                   >
                     <div>
                       <p className="text-[13px] font-semibold text-slate-800">{op.cotacao}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">ID {op.id}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-slate-400" title={op.id}>
+                        {op.id.slice(0, 8)}…
+                      </p>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-2.5">
@@ -488,7 +407,9 @@ export default function OperacoesPage() {
                     </div>
 
                     <div className="md:text-right">
-                      <p className="text-[13px] font-bold tabular-nums text-slate-800">{BRL.format(face || parseMoney(d.principal))}</p>
+                      <p className="text-[13px] font-bold tabular-nums text-slate-800">
+                        {BRL.format(face || parseMoney(d.principal))}
+                      </p>
                       <p className="text-[10px] text-slate-400">
                         Princ. {BRL.format(parseMoney(d.principal))}
                       </p>
@@ -536,18 +457,9 @@ export default function OperacoesPage() {
             setWizard({ mode: 'edit', initial: selected.data, editId: selected.id });
             setSelectedId(null);
           }}
-          onStatusChange={(id, status) => {
-            setOps((prev) => prev.map((op) => (op.id === id ? { ...op, status } : op)));
-          }}
-          onValorUpdate={(id, principal) => {
-            setOps((prev) =>
-              prev.map((op) =>
-                op.id === id
-                  ? { ...op, data: { ...op.data, principal: formatMoneyInput(principal) } }
-                  : op,
-              ),
-            );
-          }}
+          onStatusChange={persistStatus}
+          onValorUpdate={persistValor}
+          onQuoteChange={persistQuote}
         />
       )}
 
