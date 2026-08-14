@@ -44,43 +44,7 @@ const VARIAVEIS_UTEIS = [
   'CIDADE', 'DATA_ASSINATURA',
 ];
 
-const SEED: Template[] = [
-  {
-    id: 1, nome: 'Contrato de Cessão', tipo: 'CONTRATO', criadoEm: '2026-01-15',
-    conteudo:
-`INSTRUMENTO PARTICULAR DE CESSÃO DE CRÉDITO
-
-CEDENTE: {{CEDENTE_NOME}}, portador do CPF nº {{CEDENTE_CPF}}, estado civil {{CEDENTE_ESTADO_CIVIL}}, residente e domiciliado no Brasil.
-
-CESSIONÁRIO: {{INVESTIDOR_NOME}}
-
-OBJETO: Precatório nº {{NUMERO_PROCESSO}}, inscrito junto ao Tribunal {{TRIBUNAL}}, com valor de face de R$ {{VALOR_FACE}}.
-
-VALOR DA CESSÃO: R$ {{VALOR_CESSAO}}
-
-Pelo presente instrumento, as partes acima qualificadas têm entre si justo e acordado a cessão de crédito referente ao precatório acima descrito, nas condições estabelecidas neste contrato.`,
-  },
-  {
-    id: 2, nome: 'Procuração Padrão', tipo: 'PROCURAÇÃO', criadoEm: '2026-01-20',
-    conteudo:
-`PROCURAÇÃO AD JUDICÍA
-
-OUTORGANTE: {{CEDENTE_NOME}}, CPF {{CEDENTE_CPF}}.
-
-OUTORGADO: {{EMPRESA_NOME}}
-
-Pelo presente instrumento particular de procuração, o(a) Outorgante nomeia e constitui como seu bastante procurador o Outorgado, a quem confere amplos poderes para representá-lo(a) perante o Tribunal {{TRIBUNAL}}, referente ao processo nº {{NUMERO_PROCESSO}}.`,
-  },
-  {
-    id: 3, nome: 'Termo de Quitação', tipo: 'TERMO', criadoEm: '2026-02-10',
-    conteudo:
-`TERMO DE QUITAÇÃO E RECIBO
-
-Pelo presente instrumento, {{CEDENTE_NOME}}, portador do CPF nº {{CEDENTE_CPF}}, declara ter recebido de {{INVESTIDOR_NOME}} a quantia de R$ {{VALOR_CESSAO}}, referente à cessão do precatório nº {{NUMERO_PROCESSO}}, dando plena, geral e irrevogável quitação.
-
-Local e data: {{CIDADE}}, {{DATA_ASSINATURA}}.`,
-  },
-];
+const SEED: Template[] = [];
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -263,7 +227,7 @@ function TemplateDrawer({
           <button
             onClick={() => { onSave(form); onClose(); }}
             disabled={!form.nome.trim() || !form.conteudo.trim()}
-            className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-sm"
+            className="flex-1 py-2.5 rounded-xl bg-gamma-strong hover:bg-gamma disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shadow-sm"
           >
             Salvar modelo
           </button>
@@ -313,7 +277,7 @@ export default function GeradorDocsPage() {
   const preview = previewId != null ? templates.find((t) => t.id === previewId) : null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-gamma-bg">
       <Sidebar onLogout={handleLogout} userName={user?.name ?? ''} userEmail={user?.email ?? ''} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -331,7 +295,7 @@ export default function GeradorDocsPage() {
           </div>
           <button
             onClick={handleNew}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gamma-strong hover:bg-gamma text-white text-sm font-semibold transition-colors shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

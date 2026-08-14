@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import { openProjef, PROJEF_URL } from '@/data/projef';
+import { atualizarValorPorSelic, formatAtualizacaoMsg } from '@/services/bacen';
+import { parseOficioPdf } from '@/services/oficioPdf';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +35,7 @@ function parseBRL(v: string): number {
 }
 
 const field =
-  'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200';
+  'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus-visible:border-gamma-strong focus-visible:shadow-gamma-focus';
 const select =
   `${field} appearance-none cursor-pointer pr-9`;
 
@@ -51,9 +53,9 @@ function StepBadge({ n, active, done }: { n: number; active?: boolean; done?: bo
       className={[
         'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums',
         done
-          ? 'bg-sky-600 text-white'
+          ? 'bg-gamma-strong text-white'
           : active
-            ? 'bg-sky-100 text-sky-800 ring-2 ring-sky-300'
+            ? 'bg-sky-100 text-gamma-text ring-2 ring-gamma-strong'
             : 'bg-slate-100 text-slate-500',
       ].join(' ')}
     >
@@ -94,10 +96,16 @@ export default function CalculadoraPage() {
   const [projefValor, setProjefValor] = useState('');
   const [projefJuros, setProjefJuros] = useState('');
   const [projefMsg, setProjefMsg] = useState('');
+  const [selicLoading, setSelicLoading] = useState(false);
+  const [selicMsg, setSelicMsg] = useState('');
+  const [aplicarEc113, setAplicarEc113] = useState(true);
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDragOver, setPdfDragOver] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfMsg, setPdfMsg] = useState('');
   const [nomeCredor, setNomeCredor] = useState('');
+  const [cpfCredor, setCpfCredor] = useState('');
   const [numeroProcesso, setNumeroProcesso] = useState('');
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +159,31 @@ export default function CalculadoraPage() {
     setShowProjef(false);
   }
 
+  async function atualizarComSelic() {
+    setSelicMsg('');
+    if (!face) {
+      setSelicMsg('Informe o valor principal antes de atualizar.');
+      return;
+    }
+    setSelicLoading(true);
+    try {
+      const r = await atualizarValorPorSelic({
+        valor: face,
+        dataBaseIso: dataBase,
+        dataAtualIso: dataAtual,
+        aplicarEc113,
+      });
+      setValorPrincipal(
+        r.valorAtualizado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      );
+      setSelicMsg(formatAtualizacaoMsg(r));
+    } catch (err) {
+      setSelicMsg(err instanceof Error ? err.message : 'Falha ao consultar Bacen.');
+    } finally {
+      setSelicLoading(false);
+    }
+  }
+
   function parsePdfName(name: string) {
     const processoMatch = name.match(/(\d{7}-?\d{2}\.?\d{4}\.?\d{1}\.?\d{2}\.?\d{4}|\d{10,25})/);
     const valorMatch = name.match(/R\$[\s]*([\d.,]+)/i);
@@ -160,18 +193,52 @@ export default function CalculadoraPage() {
     };
   }
 
-  function handlePdfSelect(file: File) {
+  async function handlePdfSelect(file: File) {
     setPdfFile(file);
-    const parsed = parsePdfName(file.name);
-    if (parsed.processo) setNumeroProcesso(parsed.processo);
-    if (parsed.valor) setValorPrincipal(parsed.valor);
+    setPdfMsg('');
+    setPdfLoading(true);
+    setShowPdf(true);
+    try {
+      const parsed = await parseOficioPdf(file);
+      if (parsed.requerente) setNomeCredor(parsed.requerente);
+      if (parsed.documento) setCpfCredor(parsed.documento);
+      if (parsed.codigoProcesso) setNumeroProcesso(parsed.codigoProcesso);
+      if (parsed.principal) setValorPrincipal(parsed.principal);
+      if (parsed.juros) setJuros(parsed.juros);
+      if (parsed.dataBase) setDataBase(parsed.dataBase);
+      if (parsed.dataExpedicao) setDataAtual(parsed.dataExpedicao);
+      if (parsed.tipo) setEsfera(parsed.tipo);
+      setTipo(/RPV/i.test(parsed.rawText || '') && !/Precat/i.test(parsed.rawText || '') ? 'RPV' : 'Precatório');
+
+      const filled = [
+        parsed.requerente && 'credor',
+        parsed.principal && 'principal',
+        parsed.juros && 'juros',
+        parsed.codigoProcesso && 'processo',
+        parsed.dataBase && 'data-base',
+      ].filter(Boolean);
+      setPdfMsg(
+        filled.length
+          ? `Ofício lido: ${filled.join(', ')} preenchidos.`
+          : 'PDF anexado, mas poucos campos foram reconhecidos — complete manualmente.',
+      );
+    } catch {
+      const parsed = parsePdfName(file.name);
+      if (parsed.processo) setNumeroProcesso(parsed.processo);
+      if (parsed.valor) setValorPrincipal(parsed.valor);
+      setPdfMsg('Não foi possível ler o conteúdo do PDF. Tente outro arquivo ou preencha manualmente.');
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   function handlePdfDrop(e: React.DragEvent) {
     e.preventDefault();
     setPdfDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') handlePdfSelect(file);
+    if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+      void handlePdfSelect(file);
+    }
   }
 
   function goToResult() {
@@ -182,6 +249,7 @@ export default function CalculadoraPage() {
     if (!resultado) return;
     const params = new URLSearchParams({
       nome: nomeCredor,
+      cpf: cpfCredor,
       processo: numeroProcesso,
       valorFace: String(Math.round(resultado.valorBruto)),
       origemLead: 'Calculadora',
@@ -297,11 +365,28 @@ export default function CalculadoraPage() {
                 <div className="mt-5 flex flex-wrap gap-2">
                   <button
                     type="button"
+                    onClick={atualizarComSelic}
+                    disabled={selicLoading || !face}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gamma-strong px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#00a894] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:shadow-gamma-focus"
+                  >
+                    {selicLoading ? 'Consultando Bacen…' : 'Atualizar via Selic (Bacen)'}
+                  </button>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={aplicarEc113}
+                      onChange={(e) => setAplicarEc113(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-slate-300 text-gamma-strong"
+                    />
+                    EC 113/21 (a partir de 12/2021)
+                  </label>
+                  <button
+                    type="button"
                     onClick={() => setShowProjef((v) => !v)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:shadow-gamma-focus"
                     aria-expanded={showProjef}
                   >
-                    Atualizar via PROJEF
+                    Colar do PROJEF
                     <svg className={`h-3.5 w-3.5 transition-transform ${showProjef ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -310,19 +395,28 @@ export default function CalculadoraPage() {
                     href={PROJEF_URL}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                    className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:shadow-gamma-focus"
                   >
-                    Abrir site oficial
+                    Abrir PROJEF
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
                 </div>
 
+                {selicMsg && (
+                  <p
+                    className={`mt-3 text-xs font-medium ${selicMsg.includes('Falha') || selicMsg.includes('Informe') ? 'text-red-600' : 'text-emerald-700'}`}
+                    aria-live="polite"
+                  >
+                    {selicMsg}
+                  </p>
+                )}
+
                 {showProjef && (
                   <form onSubmit={importProjef} className="mt-4 rounded-xl border border-sky-100 bg-sky-50/50 p-4 motion-safe:animate-fade-in">
                     <p className="mb-3 text-xs leading-relaxed text-slate-600">
-                      Calcule no PROJEF Web e cole o valor aqui. Não há API pública - a atualização é manual.
+                      PROJEF não tem API pública de cálculo. Calcule no site e cole o valor, ou use Selic (Bacen) acima.
                     </p>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div>
@@ -339,7 +433,7 @@ export default function CalculadoraPage() {
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <button type="button" onClick={openProjef} className="rounded-xl bg-sky-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300">
+                      <button type="button" onClick={openProjef} className="rounded-xl bg-sky-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-800 focus-visible:outline-none focus-visible:shadow-gamma-focus">
                         Abrir PROJEF
                       </button>
                       <button type="submit" className="rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 active:scale-[0.98]">
@@ -373,7 +467,7 @@ export default function CalculadoraPage() {
                           type="checkbox"
                           checked={aplicarIR}
                           onChange={(e) => setAplicarIR(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-sky-600 focus-visible:ring-sky-300"
+                          className="h-4 w-4 rounded border-slate-300 text-gamma-strong focus-visible:ring-sky-300"
                         />
                         <span className="text-sm font-medium text-slate-800">Aplicar IR (RRA 27,5%)</span>
                       </label>
@@ -396,7 +490,7 @@ export default function CalculadoraPage() {
                     <div className="mt-4">
                       <div className="mb-2 flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-700">Pagamentos prioritários</p>
-                        <button type="button" onClick={addPrioridade} className="text-xs font-semibold text-sky-700 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-md px-1">
+                        <button type="button" onClick={addPrioridade} className="text-xs font-semibold text-sky-700 hover:text-gamma-text focus-visible:outline-none focus-visible:shadow-gamma-focus rounded-md px-1">
                           + Adicionar
                         </button>
                       </div>
@@ -441,7 +535,7 @@ export default function CalculadoraPage() {
                         <p className="text-[13px] font-medium text-slate-700">Percentual cedível</p>
                         <p className="mt-0.5 text-xs text-slate-500">Quanto do líquido entra na proposta</p>
                       </div>
-                      <p className="font-display text-3xl font-bold tabular-nums tracking-tight text-sky-800">{percentualCedivel}%</p>
+                      <p className="font-display text-3xl font-bold tabular-nums tracking-tight text-gamma-text">{percentualCedivel}%</p>
                     </div>
                     <input
                       type="range"
@@ -449,7 +543,7 @@ export default function CalculadoraPage() {
                       max={100}
                       value={percentualCedivel}
                       onChange={(e) => setPercentualCedivel(Number(e.target.value))}
-                      className="h-2 w-full cursor-pointer accent-sky-600"
+                      className="h-2 w-full cursor-pointer accent-[#00BFA8]"
                       aria-label="Percentual cedível"
                     />
                     <div className="mt-2 flex justify-between text-[11px] text-slate-400">
@@ -463,15 +557,32 @@ export default function CalculadoraPage() {
                 <div className="mt-5">
                   <button
                     type="button"
+                    onClick={() => {
+                      setShowPdf(true);
+                      pdfInputRef.current?.click();
+                    }}
+                    disabled={pdfLoading}
+                    className="inline-flex items-center gap-2 rounded-xl border border-dashed border-gamma-strong/50 bg-gamma-soft/60 px-3.5 py-2 text-xs font-semibold text-gamma-text transition-colors hover:bg-gamma-soft disabled:opacity-60"
+                  >
+                    {pdfLoading ? 'Lendo ofício…' : 'Subir ofício (PDF)'}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setShowPdf((v) => !v)}
-                    className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-md"
+                    className="ml-2 inline-flex items-center gap-2 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:shadow-gamma-focus rounded-md"
                     aria-expanded={showPdf}
                   >
-                    {showPdf ? 'Ocultar' : 'Anexar'} PDF / dados do credor
+                    {showPdf ? 'Ocultar' : 'Ver'} anexo / credor
                     <svg className={`h-3.5 w-3.5 transition-transform ${showPdf ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
+
+                  {pdfMsg && (
+                    <p className={`mt-2 text-xs font-medium ${pdfMsg.includes('Não foi') || pdfMsg.includes('poucos') ? 'text-amber-700' : 'text-emerald-700'}`} aria-live="polite">
+                      {pdfMsg}
+                    </p>
+                  )}
 
                   {showPdf && (
                     <div className="mt-3 space-y-3 motion-safe:animate-fade-in">
@@ -494,11 +605,23 @@ export default function CalculadoraPage() {
                           </svg>
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-800">{pdfFile ? pdfFile.name : 'Arraste um PDF ou clique para escolher…'}</p>
-                          <p className="text-[11px] text-slate-400">Opcional - pode inferir processo e valor do nome do arquivo</p>
+                          <p className="truncate text-sm font-medium text-slate-800">
+                            {pdfLoading ? 'Lendo PDF…' : pdfFile ? pdfFile.name : 'Arraste o ofício ou clique para escolher…'}
+                          </p>
+                          <p className="text-[11px] text-slate-400">Lê credor, processo, principal, juros e datas automaticamente</p>
                         </div>
                       </div>
-                      <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfSelect(f); e.target.value = ''; }} />
+                      <input
+                        ref={pdfInputRef}
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void handlePdfSelect(f);
+                          e.target.value = '';
+                        }}
+                      />
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                           <Label htmlFor="credor">Nome do credor</Label>
@@ -520,7 +643,7 @@ export default function CalculadoraPage() {
                   type="button"
                   onClick={goToResult}
                   disabled={!resultado}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 py-3.5 text-sm font-bold text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 active:scale-[0.99]"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 py-3.5 text-sm font-bold text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:shadow-gamma-focus active:scale-[0.99]"
                 >
                   Ver resultado
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
@@ -589,7 +712,7 @@ export default function CalculadoraPage() {
 
                     <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
                       <p className="text-[11px] font-medium text-slate-500">Desconto efetivo sobre o bruto</p>
-                      <p className="mt-1 font-display text-2xl font-bold tabular-nums text-sky-800">
+                      <p className="mt-1 font-display text-2xl font-bold tabular-nums text-gamma-text">
                         {resultado.percentualDesconto.toFixed(2).replace('.', ',')}%
                       </p>
                       <p className="mt-1 text-[11px] text-slate-400">
@@ -618,7 +741,7 @@ export default function CalculadoraPage() {
                           setPercentualCedivel(100);
                           setProjefMsg('');
                         }}
-                        className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                        className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:shadow-gamma-focus"
                       >
                         Limpar simulação
                       </button>
@@ -668,7 +791,7 @@ function WaterfallRow({
       <span
         className={[
           'shrink-0 text-sm font-bold tabular-nums',
-          negative ? 'text-rose-600' : accent ? 'text-sky-800' : 'text-slate-900',
+          negative ? 'text-rose-600' : accent ? 'text-gamma-text' : 'text-slate-900',
         ].join(' ')}
       >
         {value}

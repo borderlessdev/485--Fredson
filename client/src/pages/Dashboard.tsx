@@ -6,88 +6,24 @@ import BarChart from '@/components/charts/BarChart';
 import DashboardCalendar from '@/components/DashboardCalendar';
 import { evolutionDataset, formatCurrencyBRL, statusDataset } from '@/data/dashboardCharts';
 
-// ── Static data ──────────────────────────────────────────────────────────────
-const recentActivity = [
-  { id: 1, action: 'Proposta enviada',     client: 'Empresa Alpha', time: 'ha 2h',  status: 'Proposta Enviada'   },
-  { id: 2, action: 'Cessão concluída',     client: 'Beta Corp',     time: 'ha 4h',  status: 'Concluído'         },
-  { id: 3, action: 'Nova análise',         client: 'Gama Ltda.',    time: 'ha 6h',  status: 'Em Análise'        },
-  { id: 4, action: 'Documentos pendentes', client: 'Delta S.A.',    time: 'ontem',  status: 'Aguardando Documentos' },
-  { id: 5, action: 'Proposta rejeitada',   client: 'Epsilon Tech',  time: 'ontem',  status: 'Proposta Rejeitada' },
-];
+const recentActivity: Array<{
+  id: number;
+  action: string;
+  client: string;
+  time: string;
+  status: string;
+}> = [];
 
 const statusColors: Record<string, string> = {
-  'Proposta Enviada':      'bg-blue-50 text-blue-700 border border-blue-100',
-  'Concluído':             'bg-emerald-50 text-emerald-700 border border-emerald-100',
-  'Em Análise':            'bg-amber-50 text-amber-700 border border-amber-100',
-  'Aguardando Documentos': 'bg-orange-50 text-orange-700 border border-orange-100',
-  'Proposta Rejeitada':    'bg-red-50 text-red-700 border border-red-100',
+  'Proposta Enviada': 'bg-gamma-soft text-[#177566] border border-[rgba(0,191,168,.25)]',
+  'Concluído': 'bg-[#E8F6F2] text-gamma-success border border-[#C8E8DE]',
+  'Em Análise': 'bg-[#F3F6F8] text-gamma-info border border-[#D5E0E6]',
+  'Aguardando Documentos': 'bg-[#FFF8EB] text-gamma-warning border border-[#F0E2C4]',
+  'Proposta Rejeitada': 'bg-[#FFF3F4] text-gamma-danger border border-[#F1D6D9]',
 };
 
-const stats = [
-  {
-    label: 'Total de projetos',
-    value: '31',
-    sub: 'todos os registros',
-    accent: 'text-slate-900',
-    icon: (
-      <svg className="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-    ring: 'ring-sky-100',
-    bg: 'bg-sky-50',
-  },
-  {
-    label: 'Em Negociacao',
-    value: '0',
-    sub: 'pipeline aberto',
-    accent: 'text-sky-700',
-    icon: (
-      <svg className="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    ring: 'ring-sky-100',
-    bg: 'bg-sky-50',
-  },
-  {
-    label: 'Potencial de Compra',
-    value: 'R$ 6,49M',
-    sub: 'Nominal: R$ 12,2M',
-    accent: 'text-sky-700',
-    icon: (
-      <svg className="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    ring: 'ring-sky-100',
-    bg: 'bg-sky-50',
-  },
-  {
-    label: 'Em Analise',
-    value: '3',
-    sub: 'inclui pendentes',
-    accent: 'text-sky-700',
-    icon: (
-      <svg className="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-    ),
-    ring: 'ring-sky-100',
-    bg: 'bg-sky-50',
-  },
-];
+const pipeline: Array<{ name: string; qty: number; width: string }> = [];
 
-// ── Bell icon ─────────────────────────────────────────────────────────────────
-function IcoBell() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  );
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -105,96 +41,126 @@ export default function DashboardPage() {
 
   const totalRegistros = evolutionDataset.reduce((acc, current) => acc + current.total, 0);
   const totalConcluidos = statusDataset.find((item) => item.status === 'Concluído')?.quantidade ?? 0;
-  const conversao = totalRegistros > 0
-    ? `${((totalConcluidos / totalRegistros) * 100).toFixed(1).replace('.', ',')}%`
-    : '0%';
+  const conversao =
+    totalRegistros > 0 ? `${((totalConcluidos / totalRegistros) * 100).toFixed(1).replace('.', ',')}%` : '0%';
+
+  const todayLabel = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
 
   return (
-    // Root: full-screen flex row — sidebar takes its natural width, content takes the rest
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-gamma-bg">
+      <Sidebar onLogout={handleLogout} userName={user?.name ?? ''} userEmail={user?.email ?? ''} />
 
-      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <Sidebar
-        onLogout={handleLogout}
-        userName={user?.name ?? ''}
-        userEmail={user?.email ?? ''}
-      />
-
-      {/* ── Main (scrollable) ───────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-
-        {/* Top bar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900 leading-none">Dashboard</h1>
-            <p className="text-xs text-slate-500 mt-1">Visao geral do sistema</p>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="sticky top-0 z-10 flex h-[70px] shrink-0 items-center gap-4 border-b border-gamma-border bg-white/96 px-4 backdrop-blur sm:px-8 lg:px-8">
+          <div className="min-w-0 pl-10 lg:pl-0">
+            <h1 className="font-display text-lg font-semibold tracking-[-0.02em] text-gamma-text">Dashboard</h1>
+            <p className="mt-0.5 truncate text-[11px] capitalize text-gamma-muted">{todayLabel}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="relative w-9 h-9 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg flex items-center justify-center transition-colors">
-              <IcoBell />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-sky-500 rounded-full border-2 border-white" />
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/precatorios')}
+              className="btn-primary hidden sm:inline-flex"
+            >
+              + Novo precatório
             </button>
-            <div className="flex items-center gap-2.5 pl-1 border-l border-slate-200 ml-1">
-              <div className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 font-semibold text-xs select-none shrink-0">
-                {initials}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold text-slate-900 leading-none">{user?.name}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{user?.email}</p>
-              </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gamma-soft text-xs font-extrabold text-[#177566]">
+              {initials}
             </div>
           </div>
         </header>
 
-        {/* Scrollable page body */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-5">
+        <main className="scrollbar-gamma flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-7">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="kicker-gamma">Visão executiva</p>
+              <h2 className="font-display mt-2 text-2xl font-semibold tracking-[-0.03em] text-gamma-text">
+                Carteira e operação
+              </h2>
+              <p className="mt-1.5 text-[13px] text-gamma-secondary">
+                Indicadores essenciais, andamento da esteira e pontos que exigem atenção.
+              </p>
+            </div>
+          </div>
 
-          {/* ── Stats grid ─────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {stats.map((s) => (
-              <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-sm transition-shadow flex items-start gap-4 min-h-[106px]">
-                <div className={`w-10 h-10 rounded-lg ${s.bg} ring-1 ${s.ring} flex items-center justify-center shrink-0`}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium mb-1">{s.label}</p>
-                  <p className={`text-[1.15rem] font-bold leading-none ${s.accent}`}>{s.value}</p>
-                  <p className="text-xs text-slate-400 mt-1.5">{s.sub}</p>
-                </div>
-              </div>
+          {/* Metric strip */}
+          <section className="mb-5 grid overflow-hidden rounded-gamma-card border border-gamma-border bg-white shadow-gamma sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: 'Carteira ativa', value: 'R$ 0', note: 'sem registros' },
+              { label: 'Valor em cessão', value: 'R$ 0', note: 'nenhum processo em formalização' },
+              { label: 'Ticket médio', value: 'R$ 0', note: 'carteira vazia' },
+              { label: 'Concluídos', value: String(totalConcluidos), note: `conversão ${conversao}` },
+            ].map((m, i) => (
+              <article
+                key={m.label}
+                className={`relative min-h-[118px] px-5 py-5 ${i > 0 ? 'border-t border-gamma-border sm:border-t-0 sm:border-l' : ''} ${i === 2 ? 'xl:border-l' : ''}`}
+              >
+                <p className="text-[11px] font-bold text-gamma-secondary">{m.label}</p>
+                <p className="font-display mt-3 text-[1.55rem] font-semibold leading-none tracking-[-0.035em] text-gamma-text">
+                  {m.value}
+                </p>
+                <p className={`mt-2.5 text-[10px] ${'positive' in m && m.positive ? 'text-gamma-success' : 'text-gamma-muted'}`}>{m.note}</p>
+                <span className="absolute inset-x-5 bottom-0 h-0.5 rounded-full bg-gamma-strong/80" />
+              </article>
             ))}
-          </div>
+          </section>
 
-          {/* ── Conversion pill ────────────────────────────────────────────── */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-white rounded-xl border border-slate-200 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-sky-500 rounded-full" />
-              <span className="text-sm text-slate-600">Conversao (Concluído):</span>
-              <span className="text-sm font-bold text-slate-900">{conversao}</span>
-            </div>
-            <div className="w-px h-4 bg-slate-200" />
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-sm text-slate-600">Concluídos:</span>
-              <span className="text-sm font-bold text-slate-900">{totalConcluidos}</span>
-            </div>
-            <div className="w-px h-4 bg-slate-200" />
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-slate-400 rounded-full" />
-              <span className="text-sm text-slate-600">Total:</span>
-              <span className="text-sm font-bold text-slate-900">{totalRegistros}</span>
-            </div>
-          </div>
-
-          {/* ── Charts ─────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-start justify-between mb-4">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section className="surface-gamma overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-gamma-border px-5 py-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 leading-none">Evolucao</h3>
-                  <p className="text-xs text-slate-500 mt-1">Projetos criados por mes (ultimos 6)</p>
+                  <h3 className="font-display text-sm font-semibold tracking-[-0.02em] text-gamma-text">Pipeline da carteira</h3>
+                  <p className="mt-1 text-[11px] text-gamma-muted">Clique em uma etapa para abrir a esteira.</p>
                 </div>
-                <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg ring-1 ring-sky-100">
+                <button type="button" onClick={() => navigate('/esteira')} className="btn-secondary !min-h-[34px] !px-3 !text-[11px]">
+                  Abrir esteira →
+                </button>
+              </div>
+              <div className="space-y-3 px-5 py-5">
+                {pipeline.length === 0 ? (
+                  <p className="py-6 text-center text-[13px] text-gamma-muted">Nenhum processo na esteira ainda.</p>
+                ) : (
+                  pipeline.map((row) => (
+                  <button
+                    key={row.name}
+                    type="button"
+                    onClick={() => navigate('/esteira')}
+                    className="grid w-full grid-cols-[120px_1fr_28px] items-center gap-3 text-left sm:grid-cols-[140px_1fr_32px]"
+                  >
+                    <span className="truncate text-[12px] font-semibold text-gamma-secondary">{row.name}</span>
+                    <span className="h-2 overflow-hidden rounded-full bg-gamma-pale">
+                      <span className="block h-full rounded-full bg-gamma-strong" style={{ width: row.width }} />
+                    </span>
+                    <span className="text-right font-display text-sm font-semibold tabular-nums text-gamma-text">{row.qty}</span>
+                  </button>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section className="surface-gamma overflow-hidden">
+              <div className="border-b border-gamma-border px-5 py-4">
+                <h3 className="font-display text-sm font-semibold tracking-[-0.02em] text-gamma-text">Agenda</h3>
+                <p className="mt-1 text-[11px] text-gamma-muted">Compromissos e follow-ups</p>
+              </div>
+              <div className="p-3 sm:p-4">
+                <DashboardCalendar />
+              </div>
+            </section>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-5">
+            <section className="surface-gamma overflow-hidden p-5 lg:col-span-3">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-display text-sm font-semibold text-gamma-text">Evolução</h3>
+                  <p className="mt-1 text-[11px] text-gamma-muted">Projetos criados por mês</p>
+                </div>
+                <span className="rounded-gamma bg-gamma-soft px-2.5 py-1 text-[11px] font-bold text-[#177566]">
                   Concluído: {totalConcluidos}
                 </span>
               </div>
@@ -205,17 +171,16 @@ export default function DashboardPage() {
                   {
                     key: 'total-projetos',
                     label: 'Projetos',
-                    color: '#0284c7',
+                    color: '#00BFA8',
                     valueAccessor: (item) => item.total,
                   },
                 ]}
               />
-            </div>
-            <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 leading-none">Distribuicao por Status</h3>
-                <p className="text-xs text-slate-500 mt-1">Conversao: {conversao}</p>
-              </div>
+            </section>
+
+            <section className="surface-gamma overflow-hidden p-5 lg:col-span-2">
+              <h3 className="font-display text-sm font-semibold text-gamma-text">Distribuição por status</h3>
+              <p className="mt-1 mb-4 text-[11px] text-gamma-muted">Conversão: {conversao}</p>
               <BarChart
                 data={statusDataset}
                 xLabelAccessor={(item) => item.status}
@@ -224,44 +189,53 @@ export default function DashboardPage() {
                 tooltipValueFormatter={(item) => `${item.quantidade}`}
                 tooltipExtraFormatter={(item) => formatCurrencyBRL(item.valorTotal)}
               />
-            </div>
+            </section>
           </div>
 
-          {/* ── Bottom cards ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-            {/* Ultimos leads */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <section className="surface-gamma overflow-hidden">
+              <div className="flex items-center justify-between border-b border-gamma-border px-5 py-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 leading-none">Ultimos Leads</h3>
-                  <p className="text-xs text-slate-500 mt-1">Ultimas 5 atividades</p>
+                  <h3 className="font-display text-sm font-semibold text-gamma-text">Atividades recentes</h3>
+                  <p className="mt-1 text-[11px] text-gamma-muted">Últimas movimentações</p>
                 </div>
-                <span className="text-xs text-sky-700 font-medium bg-sky-50 px-2.5 py-1 rounded-md">Ver todos</span>
               </div>
-              <div className="divide-y divide-slate-50">
-                {recentActivity.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-sky-700">{a.client[0]}</span>
+              <div className="divide-y divide-gamma-border">
+                {recentActivity.length === 0 ? (
+                  <p className="px-5 py-8 text-center text-[13px] text-gamma-muted">Nenhuma atividade registrada.</p>
+                ) : (
+                  recentActivity.map((a) => (
+                  <div key={a.id} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-gamma-pale">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gamma-soft text-xs font-bold text-[#177566]">
+                      {a.client[0]}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{a.client}</p>
-                      <p className="text-xs text-slate-400 truncate mt-0.5">{a.action}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gamma-text">{a.client}</p>
+                      <p className="truncate text-xs text-gamma-muted">{a.action}</p>
                     </div>
-                    <div className="text-right shrink-0 space-y-1">
-                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[a.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                    <div className="shrink-0 space-y-1 text-right">
+                      <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-semibold ${statusColors[a.status]}`}>
                         {a.status}
                       </span>
-                      <p className="text-[10px] text-slate-400">{a.time}</p>
+                      <p className="text-[10px] text-gamma-muted">{a.time}</p>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
-            </div>
+            </section>
 
-            <DashboardCalendar />
-
+            <section className="surface-gamma overflow-hidden">
+              <div className="border-b border-gamma-border px-5 py-4">
+                <h3 className="font-display text-sm font-semibold text-gamma-text">Atenção operacional</h3>
+                <p className="mt-1 text-[11px] text-gamma-muted">Exceções e pendências prioritárias</p>
+              </div>
+              <ul className="space-y-0 divide-y divide-gamma-border px-2 py-1">
+                <li className="px-3 py-8 text-center text-[13px] text-gamma-muted">
+                  Nenhuma pendência no momento.
+                </li>
+              </ul>
+            </section>
           </div>
         </main>
       </div>

@@ -29,6 +29,14 @@ export default function BarChart<TDatum>({
   const xLabels = useMemo(() => data.map(xLabelAccessor), [data, xLabelAccessor]);
   const values = useMemo(() => data.map(valueAccessor), [data, valueAccessor]);
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[320px] items-center justify-center rounded-lg border border-dashed border-gamma-border bg-gamma-pale/40 text-[13px] text-gamma-muted">
+        Sem dados para exibir
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <BaseChart xLabels={xLabels} values={values} height={320} yTickFormatter={formatInteger}>

@@ -13,6 +13,7 @@ import {
 } from '@/data/precatorioForm';
 import { PRECATORIO_STATUS, type PrecatorioStatus } from '@/data/status';
 import { fetchEstados, fetchMunicipios, type IbgeEstado, type IbgeMunicipio } from '@/services/ibge';
+import { parseOficioPdf } from '@/services/oficioPdf';
 
 const field =
   'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400';
@@ -149,13 +150,15 @@ function StepRail({
 export interface PrecatorioWizardProps {
   initial?: Partial<PrecatorioFormData>;
   mode?: 'create' | 'edit';
+  saving?: boolean;
   onCancel: () => void;
-  onSave: (data: PrecatorioFormData) => void;
+  onSave: (data: PrecatorioFormData, oficioFile?: File | null) => void;
 }
 
 export default function PrecatorioWizard({
   initial,
   mode = 'create',
+  saving = false,
   onCancel,
   onSave,
 }: PrecatorioWizardProps) {
@@ -166,6 +169,9 @@ export default function PrecatorioWizard({
   const [estados, setEstados] = useState<IbgeEstado[]>([]);
   const [cidades, setCidades] = useState<IbgeMunicipio[]>([]);
   const [loadingCidades, setLoadingCidades] = useState(false);
+  const [oficioLoading, setOficioLoading] = useState(false);
+  const [oficioFile, setOficioFile] = useState<File | null>(null);
+  const [oficioRemoved, setOficioRemoved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -254,20 +260,64 @@ export default function PrecatorioWizard({
   }
 
   function handleSave() {
+    if (saving) return;
     const err = validateStep(4);
     if (err) {
       setError(err);
       return;
     }
-    onSave(form);
+    onSave(form, oficioRemoved ? null : oficioFile);
   }
 
-  function onOficioChange(file: File | null) {
-    if (!form.tribunal) {
-      setError('É necessário selecionar um tribunal antes de fazer upload do ofício.');
+  async function onOficioChange(file: File | null) {
+    if (!file) {
+      setOficioFile(null);
+      setOficioRemoved(true);
+      patch('oficioNome', '');
+      patch('oficioAnexo', false);
       return;
     }
-    patch('oficioNome', file?.name ?? '');
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Envie um arquivo PDF do ofício.');
+      return;
+    }
+
+    setOficioFile(file);
+    setOficioRemoved(false);
+    setOficioLoading(true);
+    setError('');
+    try {
+      const parsed = await parseOficioPdf(file);
+      const { rawText: _raw, avisos, ...fields } = parsed;
+      setForm((prev) => {
+        const next = { ...prev, oficioNome: file.name, oficioAnexo: false };
+        (Object.keys(fields) as Array<keyof PrecatorioFormData>).forEach((key) => {
+          const val = fields[key];
+          if (val === undefined || val === null || val === '') return;
+          // não sobrescreve status default se o PDF não trouxer
+          if (key === 'status' && !val) return;
+          (next as PrecatorioFormData)[key] = val as never;
+        });
+        return next;
+      });
+      setMaxReached((m) => Math.max(m, 3));
+      if (avisos?.length) {
+        setError(`Ofício lido com avisos: ${avisos.join(' ')}`);
+      } else {
+        setError('');
+      }
+    } catch (err) {
+      setOficioFile(file);
+      patch('oficioNome', file.name);
+      patch('oficioAnexo', false);
+      setError(
+        err instanceof Error
+          ? `Não foi possível ler o PDF (${err.message}). O nome foi salvo — preencha os campos manualmente.`
+          : 'Não foi possível ler o PDF. Preencha os campos manualmente.',
+      );
+    } finally {
+      setOficioLoading(false);
+    }
   }
 
   return (
@@ -387,26 +437,30 @@ export default function PrecatorioWizard({
                     type="file"
                     accept=".pdf,application/pdf"
                     className="sr-only"
-                    onChange={(e) => onOficioChange(e.target.files?.[0] ?? null)}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      void onOficioChange(f);
+                      e.target.value = '';
+                    }}
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!form.tribunal) {
-                        setError('É necessário selecionar um tribunal antes de fazer upload do ofício.');
-                        return;
-                      }
-                      fileRef.current?.click();
-                    }}
+                    disabled={oficioLoading}
+                    onClick={() => fileRef.current?.click()}
                     className={[
-                      'group flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-left transition-all duration-200',
+                      'group flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-4 text-left transition-all duration-200 disabled:opacity-70',
                       form.oficioNome
                         ? 'border-sky-300 bg-sky-50/60'
                         : 'border-slate-300 bg-slate-50/80 hover:border-sky-400 hover:bg-sky-50/40',
                     ].join(' ')}
                   >
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-                      {form.oficioNome ? (
+                      {oficioLoading ? (
+                        <svg className="h-5 w-5 animate-spin text-sky-600" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
+                        </svg>
+                      ) : form.oficioNome ? (
                         <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -418,19 +472,26 @@ export default function PrecatorioWizard({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-slate-800">
-                        {form.oficioNome || 'Subir ofício'}
+                        {oficioLoading ? 'Lendo ofício…' : form.oficioNome || 'Subir ofício'}
                       </span>
                       <span className="block text-xs text-slate-500">
-                        {form.oficioNome ? 'Clique para substituir o PDF' : 'PDF · necessário selecionar o tribunal primeiro'}
+                        {oficioLoading
+                          ? 'Extraindo CPF, partes, valores e datas do PDF'
+                          : form.oficioNome
+                            ? 'Campos preenchidos a partir do PDF · clique para substituir'
+                            : 'PDF do ofício — o sistema lê e preenche automaticamente'}
                       </span>
                     </span>
-                    {form.oficioNome && (
+                    {form.oficioNome && !oficioLoading && (
                       <button
                         type="button"
                         className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-white hover:text-rose-600"
                         onClick={(e) => {
                           e.stopPropagation();
+                          setOficioFile(null);
+                          setOficioRemoved(true);
                           patch('oficioNome', '');
+                          patch('oficioAnexo', false);
                           if (fileRef.current) fileRef.current.value = '';
                         }}
                       >
@@ -453,7 +514,7 @@ export default function PrecatorioWizard({
                 </label>
 
                 <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-center text-xs text-slate-500">
-                  Preencha tipo e tribunal para liberar as próximas etapas.
+                  Suba o ofício em PDF para preencher automaticamente — ou informe tipo e tribunal manualmente.
                 </p>
               </section>
             )}
@@ -922,10 +983,11 @@ export default function PrecatorioWizard({
             ) : (
               <button
                 type="button"
+                disabled={saving}
                 onClick={handleSave}
-                className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700"
+                className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Salvar
+                {saving ? 'Salvando…' : 'Salvar'}
               </button>
             )}
           </div>

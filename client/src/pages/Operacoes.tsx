@@ -13,16 +13,16 @@ import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } 
 import {
   createPrecatorio,
   listPrecatorios,
-  seedDemoPrecatoriosIfEmpty,
   updatePrecatorio,
   type PrecatorioRecord,
 } from '@/services/precatorios';
+import { deleteOficioAnexo, saveOficioAnexo } from '@/services/oficioAnexos';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const TRIBUNAL_STYLES: Record<string, string> = {
-  TRF1: 'bg-sky-50 text-sky-700',
-  TRF3: 'bg-sky-50 text-sky-700',
+  TRF1: 'bg-gamma-soft text-[#177566]',
+  TRF3: 'bg-gamma-soft text-[#177566]',
   TJCE: 'bg-teal-50 text-teal-700',
   TJAM: 'bg-violet-50 text-violet-700',
   TJRJ: 'bg-indigo-50 text-indigo-700',
@@ -109,17 +109,11 @@ export default function OperacoesPage() {
       setLoading(true);
       setError('');
       try {
-        const rows = await seedDemoPrecatoriosIfEmpty();
+        const rows = await listPrecatorios();
         if (!cancelled) setOps(rows);
       } catch (e) {
         console.error(e);
-        try {
-          const rows = await listPrecatorios();
-          if (!cancelled) setOps(rows);
-        } catch (err) {
-          console.error(err);
-          if (!cancelled) setError('Não foi possível carregar os precatórios do Firebase.');
-        }
+        if (!cancelled) setError('Não foi possível carregar os precatórios do Firebase.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -163,31 +157,62 @@ export default function OperacoesPage() {
     return { total: ops.length, emAnalise, totalFace };
   }, [ops]);
 
-  async function handleSave(data: PrecatorioFormData) {
+  async function handleSave(data: PrecatorioFormData, oficioFile?: File | null) {
+    if (!user || saving) return;
     setSaving(true);
     setError('');
     try {
+      let formData = { ...data };
+
+      if (oficioFile === null && !formData.oficioNome) {
+        formData = { ...formData, oficioAnexo: false };
+      }
+
       if (wizard?.mode === 'edit' && wizard.editId) {
-        await updatePrecatorio(wizard.editId, { data, status: (data.status || undefined) as PrecatorioStatus | undefined });
+        const id = wizard.editId;
+        if (oficioFile === null && !formData.oficioNome) {
+          await deleteOficioAnexo(id);
+        } else if (oficioFile) {
+          await saveOficioAnexo(id, oficioFile);
+          formData = { ...formData, oficioNome: oficioFile.name, oficioAnexo: true };
+        }
+        await updatePrecatorio(id, {
+          data: formData,
+          status: (formData.status || undefined) as PrecatorioStatus | undefined,
+        });
         setOps((prev) =>
           prev.map((op) =>
-            op.id === wizard.editId
-              ? { ...op, status: (data.status || op.status) as PrecatorioStatus, data }
+            op.id === id
+              ? { ...op, status: (formData.status || op.status) as PrecatorioStatus, data: formData }
               : op,
           ),
         );
-        setSelectedId(wizard.editId);
+        setSelectedId(id);
         setToast('O precatório foi atualizado no Firebase.');
       } else {
-        const record = await createPrecatorio({ data });
-        setOps((prev) => [record, ...prev]);
+        const record = await createPrecatorio({ data: formData });
+        let finalData = record.data;
+
+        if (oficioFile === null && !formData.oficioNome) {
+          await deleteOficioAnexo(record.id).catch(() => undefined);
+        } else if (oficioFile) {
+          await saveOficioAnexo(record.id, oficioFile);
+          finalData = { ...finalData, oficioNome: oficioFile.name, oficioAnexo: true };
+          await updatePrecatorio(record.id, { data: finalData });
+        }
+
+        setOps((prev) => [{ ...record, data: finalData }, ...prev]);
         setSelectedId(record.id);
-        setToast('O precatório foi salvo no Firebase.');
+        setToast(
+          oficioFile
+            ? 'Precatório e ofício salvos. Cedente e esteira atualizados.'
+            : 'Precatório salvo. Cedente e esteira atualizados automaticamente.',
+        );
       }
       setWizard(null);
     } catch (e) {
       console.error(e);
-      setError('Falha ao salvar no Firebase. Verifique as regras e a conexão.');
+      setError(e instanceof Error ? e.message : 'Falha ao salvar no Firebase.');
     } finally {
       setSaving(false);
     }
@@ -227,7 +252,7 @@ export default function OperacoesPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f4f7fb]">
+    <div className="flex h-screen overflow-hidden bg-gamma-bg">
       <Sidebar onLogout={handleLogout} userName={user?.name ?? ''} userEmail={user?.email ?? ''} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -238,8 +263,8 @@ export default function OperacoesPage() {
           />
           <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">Monitor · Firebase</p>
-              <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">Meus Precatórios</h1>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gamma-strong">Operação</p>
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-gamma-text pl-10 lg:pl-0">Meus Precatórios</h1>
               <p className="mt-1 max-w-xl text-sm text-slate-500">
                 Dados persistidos em tempo real no Firestore da sua conta.
               </p>
@@ -248,7 +273,7 @@ export default function OperacoesPage() {
               type="button"
               onClick={() => setWizard({ mode: 'create' })}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-all hover:bg-sky-700 hover:shadow-md disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-gamma-strong px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[rgba(0,191,168,.2)] transition-all hover:bg-gamma hover:shadow-md disabled:opacity-60"
             >
               <IcoPlus />
               Novo precatório
@@ -273,14 +298,14 @@ export default function OperacoesPage() {
                 placeholder="Buscar cotação, processo, credor…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-gamma-strong focus:bg-white focus:ring-2 focus:shadow-gamma-focus"
               />
             </div>
 
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+              className="appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-gamma-strong focus:ring-2 focus:shadow-gamma-focus"
               aria-label="Filtrar por status"
             >
               <option value="Todos">Todos os status</option>
@@ -294,7 +319,7 @@ export default function OperacoesPage() {
             <select
               value={filterTribunal}
               onChange={(e) => setFilterTribunal(e.target.value)}
-              className="appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+              className="appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-gamma-strong focus:ring-2 focus:shadow-gamma-focus"
               aria-label="Filtrar por tribunal"
             >
               <option value="Todos">Todos os tribunais</option>
@@ -346,7 +371,7 @@ export default function OperacoesPage() {
                 <button
                   type="button"
                   onClick={() => setWizard({ mode: 'create' })}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gamma-strong px-4 py-2 text-sm font-semibold text-white hover:bg-gamma"
                 >
                   <IcoPlus />
                   Novo precatório
@@ -361,7 +386,7 @@ export default function OperacoesPage() {
                   <div
                     key={op.id}
                     className={[
-                      'group grid items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-sky-50/40 md:grid-cols-[140px_1fr_180px_130px_140px_110px]',
+                      'group grid items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-gamma-soft/40 md:grid-cols-[140px_1fr_180px_130px_140px_110px]',
                       i < filtered.length - 1 ? 'border-b border-slate-100' : '',
                     ].join(' ')}
                   >
@@ -373,7 +398,7 @@ export default function OperacoesPage() {
                     </div>
 
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-100 to-cyan-50 text-xs font-bold text-sky-800 ring-1 ring-sky-100">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gamma-soft to-gamma-pale text-xs font-bold text-gamma-text ring-1 ring-[rgba(0,191,168,.2)]">
                         {initial}
                       </span>
                       <div className="min-w-0">
@@ -419,14 +444,14 @@ export default function OperacoesPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedId(op.id)}
-                        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] font-semibold text-slate-600 transition-all hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800"
+                        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] font-semibold text-slate-600 transition-all hover:border-gamma-strong hover:bg-gamma-soft hover:text-gamma-text"
                       >
                         Abrir
                       </button>
                       <button
                         type="button"
                         onClick={() => setWizard({ mode: 'edit', initial: d, editId: op.id })}
-                        className="rounded-lg border border-transparent px-2 py-1.5 text-[12px] font-semibold text-slate-400 transition-colors hover:text-sky-700"
+                        className="rounded-lg border border-transparent px-2 py-1.5 text-[12px] font-semibold text-slate-400 transition-colors hover:text-[#177566]"
                         aria-label="Editar no fluxo"
                       >
                         Editar
@@ -444,6 +469,7 @@ export default function OperacoesPage() {
         <PrecatorioWizard
           mode={wizard.mode}
           initial={wizard.initial}
+          saving={saving}
           onCancel={() => setWizard(null)}
           onSave={handleSave}
         />

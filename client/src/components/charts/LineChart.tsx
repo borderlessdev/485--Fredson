@@ -20,6 +20,14 @@ export default function LineChart<TDatum>({ data, xLabelAccessor, series }: Line
     [data, series],
   );
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[320px] items-center justify-center rounded-lg border border-dashed border-gamma-border bg-gamma-pale/40 text-[13px] text-gamma-muted">
+        Sem dados para exibir
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <BaseChart xLabels={xLabels} values={values} height={320} yTickFormatter={formatInteger}>
@@ -42,6 +50,8 @@ export default function LineChart<TDatum>({ data, xLabelAccessor, series }: Line
               </defs>
 
               {pointsBySeries.map((points, idx) => {
+                if (points.length === 0) return null;
+
                 const pathData = points
                   .map((point, pointIndex) => (pointIndex === 0 ? `M${point.x},${point.y}` : `L${point.x},${point.y}`))
                   .join(' ');

@@ -2,41 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --gamma-primary: #0bd5bb;
+  --gamma-strong: #00bfa8;
+  --gamma-soft: #e8fbf8;
+  --gamma-text: #383a3a;
+  --gamma-border: #e3e9e8;
+  --gamma-bg: #f7f9f9;
+}
+
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    @apply bg-gamma-bg text-gamma-text font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse 90% 50% at 100% -10%, rgba(11, 213, 187, 0.07), transparent 50%),
+      radial-gradient(ellipse 60% 40% at 0% 100%, rgba(0, 191, 168, 0.05), transparent 45%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgba(11, 213, 187, 0.22);
   }
 }
 
 @layer components {
   .input-field {
-    @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400
-           focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500
-           transition-all duration-200 hover:border-slate-300;
+    @apply w-full rounded-gamma border border-gamma-border bg-white px-3.5 py-2.5 text-sm text-gamma-text
+           placeholder:text-gamma-muted outline-none transition-all duration-150
+           hover:border-gamma-border-strong
+           focus:border-gamma-strong focus:bg-white focus:shadow-gamma-focus;
   }
 
   .btn-primary {
-    @apply w-full bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800
-           text-white font-semibold rounded-lg px-4 py-2.5 text-sm
-           focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-gamma border border-gamma-strong
+           bg-gamma-strong px-4 py-2.5 text-xs font-bold text-[#083D37]
+           transition-all duration-150 hover:-translate-y-px hover:bg-gamma
+           focus-visible:outline-none focus-visible:shadow-gamma-focus
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-gamma border border-gamma-border-strong
+           bg-white px-4 py-2.5 text-xs font-bold text-gamma-text
+           transition-all duration-150 hover:-translate-y-px hover:border-[#BAC9C6] hover:bg-[#FBFDFD]
+           focus-visible:outline-none focus-visible:shadow-gamma-focus;
   }
 
   .error-text {
-    @apply text-red-500 text-xs mt-1.5 flex items-center gap-1;
+    @apply mt-1.5 flex items-center gap-1 text-xs text-gamma-danger;
   }
 
-  .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600
-           hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 cursor-pointer;
+  .surface-gamma {
+    @apply rounded-gamma-card border border-gamma-border bg-white shadow-gamma;
   }
 
-  .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-           bg-cyan-50 text-cyan-700 transition-all duration-150;
+  .kicker-gamma {
+    @apply inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.09em] text-gamma-secondary;
   }
+  .kicker-gamma::before {
+    content: '';
+    @apply h-0.5 w-[22px] rounded-full bg-gamma-strong;
+  }
+}
 
-  .stat-card {
-    @apply bg-white rounded-xl border border-slate-200 p-5;
-  }
+/* Scrollbar discreto */
+.scrollbar-gamma::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-gamma::-webkit-scrollbar-thumb {
+  background: #d3dcda;
+  border-radius: 99px;
 }

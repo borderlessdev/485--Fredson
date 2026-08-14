@@ -40,27 +40,8 @@ function buildMonth(year: number, month: number) {
   return cells;
 }
 
-function seedEvents(today: Date): CalendarEvent[] {
-  const y = today.getFullYear();
-  const m = today.getMonth();
-  const mk = (day: number, title: string, time?: string): CalendarEvent => ({
-    id: `${y}-${m}-${day}-${title}`,
-    dateKey: toKey(new Date(y, m, day)),
-    title,
-    time,
-  });
-
-  const lastDay = new Date(y, m + 1, 0).getDate();
-  const d1 = Math.min(today.getDate(), lastDay);
-  const d2 = Math.min(today.getDate() + 2, lastDay);
-  const d3 = Math.min(today.getDate() + 5, lastDay);
-
-  return [
-    mk(d1, 'Reunião de análise', '10:00'),
-    mk(d1, 'Envio de proposta', '15:30'),
-    mk(d2, 'Prazo de documentos'),
-    mk(d3, 'Assinatura de cessão', '14:00'),
-  ];
+function seedEvents(_today: Date): CalendarEvent[] {
+  return [];
 }
 
 export default function DashboardCalendar() {

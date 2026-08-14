@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import { PRECATORIO_STATUS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
+import { createCedente, parseValorFace } from '@/services/cedentes';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,8 @@ export default function ImportarPage() {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importedCount, setImportedCount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleLogout() { signOut(); navigate('/login', { replace: true }); }
@@ -120,13 +123,42 @@ export default function ImportarPage() {
     setStep(2);
   }
 
-  function handleImport() {
+  async function handleImport() {
+    if (!user) return;
     setImporting(true);
-    setTimeout(() => {
-      setImporting(false);
+    setImportError('');
+    let count = 0;
+    try {
+      for (const row of validRows) {
+        const status = (STATUS_VALID.includes(row.status) ? row.status : 'Em Análise') as PrecatorioStatus;
+        await createCedente({
+          nome: row.cedente.trim(),
+          cpf: '',
+          estadoCivil: '',
+          email: '',
+          telefone: '',
+          origemLead: 'Importação CSV',
+          statusEsteira: status,
+          dadosBancarios: { banco: '', agencia: '', conta: '', tipoConta: 'Corrente', pix: '' },
+          processo: row.processo.trim(),
+          valorFace: parseValorFace(row.valor),
+          arquivos: [],
+        });
+        count += 1;
+      }
+      setImportedCount(count);
       setImportDone(true);
       setStep(3);
-    }, 1800);
+    } catch (e) {
+      console.error(e);
+      setImportError(
+        count > 0
+          ? `${count} registro(s) importados antes do erro. ${e instanceof Error ? e.message : 'Falha na importação.'}`
+          : e instanceof Error ? e.message : 'Falha na importação.',
+      );
+    } finally {
+      setImporting(false);
+    }
   }
 
   function handleReset() {
@@ -134,13 +166,15 @@ export default function ImportarPage() {
     setRawText('');
     setRows([]);
     setImportDone(false);
+    setImportError('');
+    setImportedCount(0);
   }
 
   const validRows = rows.filter((r) => r.valid);
   const invalidRows = rows.filter((r) => !r.valid);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-gamma-bg">
       <Sidebar onLogout={handleLogout} userName={user?.name ?? ''} userEmail={user?.email ?? ''} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -243,7 +277,7 @@ export default function ImportarPage() {
                     onChange={(e) => setRawText(e.target.value)}
                     placeholder={`Cole aqui os dados do Excel (Ctrl+V)...\n\nExemplo:\n1234567-00.2024.1.01.0000, 50000, João da Silva, Em Análise\n9876543-00.2023.1.01.0000, 120000, Maria Souza, Concluído`}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono text-slate-700 placeholder-slate-400
-                               focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all resize-none leading-relaxed"
+                               focus:outline-none focus:ring-2 focus:border-gamma-strong focus:shadow-gamma-focus transition-all resize-none leading-relaxed"
                   />
 
                   {rawText.trim() && (
@@ -256,7 +290,7 @@ export default function ImportarPage() {
                 <button
                   onClick={handleReview}
                   disabled={!rawText.trim()}
-                  className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm tracking-wide transition-colors shadow-sm flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-gamma-strong hover:bg-gamma disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm tracking-wide transition-colors shadow-sm flex items-center justify-center gap-2"
                 >
                   Revisar dados
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
@@ -350,6 +384,12 @@ export default function ImportarPage() {
                   </div>
                 )}
 
+                {importError && (
+                  <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                    <p className="text-xs text-red-700">{importError}</p>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button onClick={() => setStep(1)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                     ← Voltar
@@ -386,13 +426,13 @@ export default function ImportarPage() {
                     </svg>
                   </div>
                   <p className="text-xl font-black text-white">Importação concluída!</p>
-                  <p className="text-sm text-white/80 mt-1">{validRows.length} registro(s) adicionado(s) com sucesso</p>
+                  <p className="text-sm text-white/80 mt-1">{importedCount} registro(s) adicionado(s) com sucesso</p>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
                   <div className="px-6 py-5 text-center">
-                    <p className="text-3xl font-black text-emerald-600">{validRows.length}</p>
+                    <p className="text-3xl font-black text-emerald-600">{importedCount}</p>
                     <p className="text-xs text-slate-500 font-semibold mt-0.5">Importados com sucesso</p>
                   </div>
                   <div className="px-6 py-5 text-center">
@@ -405,7 +445,7 @@ export default function ImportarPage() {
                 <div className="px-6 py-5 flex gap-3">
                   <button
                     onClick={() => navigate('/cedentes')}
-                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm"
+                    className="flex-1 py-2.5 rounded-xl bg-gamma-strong hover:bg-gamma text-white text-sm font-semibold transition-colors shadow-sm"
                   >
                     Ver Cedentes importados
                   </button>

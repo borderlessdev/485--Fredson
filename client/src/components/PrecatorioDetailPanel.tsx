@@ -1,9 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { parseMoney } from '@/data/precatorioForm';
 import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
 import { openProjef } from '@/data/projef';
 import ProjefImportPanel from '@/components/ProjefImportPanel';
 import type { PrecatorioRecord } from '@/services/precatorios';
+import {
+  downloadBlob,
+  loadOficioAnexo,
+  openBlobPreview,
+  type OficioAnexo,
+} from '@/services/oficioAnexos';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -36,6 +42,33 @@ export default function PrecatorioDetailPanel({
   const [ofertaPct, setOfertaPct] = useState(record.ofertaPct || 70);
   const [comissaoPct, setComissaoPct] = useState(record.comissaoPct || 1);
   const [flash, setFlash] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [anexo, setAnexo] = useState<OficioAnexo | null>(null);
+  const [anexoLoading, setAnexoLoading] = useState(false);
+
+  useEffect(() => {
+    if (!d.oficioAnexo && !d.oficioNome) {
+      setAnexo(null);
+      return;
+    }
+    let cancelled = false;
+    setAnexoLoading(true);
+    setFileError('');
+    void loadOficioAnexo(record.id)
+      .then((loaded) => {
+        if (!cancelled) setAnexo(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) setFileError('Não foi possível carregar o ofício.');
+      })
+      .finally(() => {
+        if (!cancelled) setAnexoLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [record.id, d.oficioAnexo, d.oficioNome]);
 
   const calc = useMemo(() => {
     const valorAtualizado = face > 0 ? face : principal;
@@ -51,6 +84,24 @@ export default function PrecatorioDetailPanel({
     onQuoteChange?.(record.id, ofertaPct, comissaoPct);
     setFlash(true);
     window.setTimeout(() => setFlash(false), 700);
+  }
+
+  async function handleDownloadOficio() {
+    if (!anexo) return;
+    setFileBusy(true);
+    setFileError('');
+    try {
+      downloadBlob(anexo.blob, anexo.nome || d.oficioNome || 'oficio.pdf');
+    } catch {
+      setFileError('Não foi possível baixar o ofício.');
+    } finally {
+      setFileBusy(false);
+    }
+  }
+
+  function handleViewOficio() {
+    if (!anexo) return;
+    openBlobPreview(anexo.blob);
   }
 
   return (
@@ -118,6 +169,61 @@ export default function PrecatorioDetailPanel({
           <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             {/* Summary */}
             <div className="space-y-5 border-b border-slate-100 px-5 py-5 sm:px-6 lg:border-b-0 lg:border-r">
+              <Section title="Documentos">
+                {d.oficioNome ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-200">
+                        <svg className="h-5 w-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-800" title={d.oficioNome}>
+                          {d.oficioNome}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">Ofício requisitório anexado</p>
+                        {anexoLoading ? (
+                          <p className="mt-2 text-xs text-slate-400">Carregando arquivo…</p>
+                        ) : anexo ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={handleViewOficio}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition-colors hover:bg-sky-50"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Visualizar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={fileBusy}
+                              onClick={() => void handleDownloadOficio()}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-60"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                              {fileBusy ? 'Baixando…' : 'Baixar'}
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-xs text-amber-700">
+                            Arquivo não encontrado — edite o precatório e anexe o PDF novamente.
+                          </p>
+                        )}
+                        {fileError && <p className="mt-2 text-xs text-rose-600">{fileError}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">Nenhum ofício anexado</p>
+                )}
+              </Section>
+
               <Section title="Preços">
                 <Row label="Preço" value={BRL.format(calc.preco)} strong />
                 <Row label="Preço mínimo" value={BRL.format(calc.min)} />

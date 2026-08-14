@@ -6,9 +6,9 @@ import {
   signOut as firebaseSignOut,
   updateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { normalizeRole, roleFromEmail, type UserRole } from '@/data/roles';
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db, getSecondaryAuth } from '@/lib/firebase';
+import { isAdmin, normalizeRole, roleFromEmail, type UserRole } from '@/data/roles';
 
 export interface AuthUser {
   id: string;
@@ -26,6 +26,13 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
+}
+
+export interface AdminCreateUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'operator';
 }
 
 export interface ForgotPasswordPayload {
@@ -110,10 +117,64 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
     id: credential.user.uid,
     name: payload.name,
     email: payload.email,
-    role: 'admin',
+    role: 'collaborator',
   };
-  await upsertUserProfile(user, { setRole: true, role: 'admin' });
+  await upsertUserProfile(user, { setRole: true, role: 'collaborator' });
   return { user };
+}
+
+export async function listUsers(): Promise<AuthUser[]> {
+  const me = await getMe();
+  if (!isAdmin(me.role)) {
+    throw new Error('Apenas administradores podem listar usuários.');
+  }
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs
+    .map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        name: String(data.name ?? 'Usuário'),
+        email: String(data.email ?? ''),
+        role: normalizeRole(data.role),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+}
+
+export async function adminCreateUser(payload: AdminCreateUserPayload): Promise<AuthUser> {
+  const me = await getMe();
+  if (!isAdmin(me.role)) {
+    throw new Error('Apenas administradores podem cadastrar usuários.');
+  }
+
+  const secondaryAuth = getSecondaryAuth();
+  let uid = '';
+  try {
+    const credential = await createUserWithEmailAndPassword(secondaryAuth, payload.email, payload.password);
+    uid = credential.user.uid;
+    await updateProfile(credential.user, { displayName: payload.name });
+  } finally {
+    await firebaseSignOut(secondaryAuth);
+  }
+
+  const user: AuthUser = {
+    id: uid,
+    name: payload.name,
+    email: payload.email,
+    role: payload.role,
+  };
+
+  await setDoc(doc(db, 'users', uid), {
+    name: payload.name,
+    email: payload.email,
+    role: payload.role,
+    createdBy: me.id,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  return user;
 }
 
 export async function getMe(): Promise<AuthUser> {

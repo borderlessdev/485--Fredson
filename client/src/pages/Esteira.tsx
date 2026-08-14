@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
+import { parseMoney } from '@/data/precatorioForm';
 import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } from '@/data/status';
+import { listPrecatorios, updatePrecatorio, type PrecatorioRecord } from '@/services/precatorios';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Card {
-  id: number;
+  id: string;
+  cotacao: string;
   processo: string;
   credor: string;
   tribunal: string;
@@ -16,25 +19,19 @@ interface Card {
   atualizadoEm: string;
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const INITIAL_CARDS: Card[] = [
-  { id: 30, processo: '481983-62.2023.8.04.0001', credor: 'BERNARDES LEITE DE OLIVEIRA', tribunal: 'TJAM', status: 'Em Análise', valor: 28000, atualizadoEm: 'Hoje' },
-  { id: 25, processo: '10194248820244013400', credor: 'LIA MARCIA DA SILVA SANTOS', tribunal: 'TRF1', status: 'Em Análise', valor: 495000, atualizadoEm: 'Ontem' },
-  { id: 24, processo: '0039519-60.2004.4.01.3400', credor: 'IVETTE MAURELLI DIAS', tribunal: 'TRF1', status: 'Aguardando Documentos', valor: 183000, atualizadoEm: '2d' },
-  { id: 23, processo: '0039519-60.2004.4.01.3400', credor: 'ARMANDO BERNARDES NETO', tribunal: 'TRF1', status: 'Aguardando Proposta', valor: 45000, atualizadoEm: '3d' },
-  { id: 22, processo: '1016656-92.2024.4.01.3400', credor: 'MARCELO TADEU DOS SANTOS', tribunal: 'TRF1', status: 'Proposta Enviada', valor: 23000, atualizadoEm: '3d' },
-  { id: 21, processo: '1016656-92.2024.4.01.3400', credor: 'MARCOS TADEU DA SILVA', tribunal: 'TRF1', status: 'Aprovado', valor: 23000, atualizadoEm: '4d' },
-  { id: 18, processo: '1030945-30.2024.4.01.3400', credor: 'ANA ODORIGES DA SILVA', tribunal: 'TRF1', status: 'Em Análise', valor: 258000, atualizadoEm: '5d' },
-  { id: 17, processo: '0045554-45.2013.8.13.0363', credor: 'JOSE CARLOS FERREIRA LIMA', tribunal: 'TJMG', status: 'Proposta Rejeitada', valor: 108000, atualizadoEm: '1 sem' },
-  { id: 28, processo: '1007017-64.2021.4.01.3300', credor: 'MARIO LUIZ SOUZA BRANDAO', tribunal: 'TRF1', status: 'Concluído', valor: 66000, atualizadoEm: '1 sem' },
-  { id: 26, processo: '3000365-32.2023.8.06.0041', credor: 'FRANCISCO HENRIQUE DE MACEDO', tribunal: 'TJCE', status: 'Em Cessão', valor: 45000, atualizadoEm: '2 sem' },
-  { id: 19, processo: '3000365-32.2023.8.06.0041', credor: 'ALUISIO TAVEIRA DOS SANTOS', tribunal: 'TJCE', status: 'Concluído', valor: 68000, atualizadoEm: '2 sem' },
-  { id: 15, processo: '1001244-06.2022.4.06.3804', credor: 'CLESIO RODRIGUES ALVES JUNIOR', tribunal: 'TRF6', status: 'Concluído', valor: 135000, atualizadoEm: '3 sem' },
-  { id: 14, processo: '3000268-32.2023.8.06.0041', credor: 'FRANCISCO HENRIQUE DE MACEDO', tribunal: 'TJCE', status: 'Em Cessão', valor: 84000, atualizadoEm: '3 sem' },
-  { id: 13, processo: '3000268-32.2023.8.06.0041', credor: 'IRAILDE PEREIRA DE LIMA', tribunal: 'TJCE', status: 'Aprovado', valor: 196000, atualizadoEm: '1 mês' },
-  { id: 6, processo: '5023469-75.2023.4.04.7003', credor: 'RICARDO AMARAL GOMES FERNANDES', tribunal: 'TRF4', status: 'Concluído', valor: 92000, atualizadoEm: '1 mês' },
-];
+function recordToCard(op: PrecatorioRecord): Card {
+  const d = op.data;
+  return {
+    id: op.id,
+    cotacao: op.cotacao,
+    processo: d.codigoProcesso || '—',
+    credor: d.requerente || 'Sem credor',
+    tribunal: d.tribunal || '—',
+    status: op.status,
+    valor: parseMoney(d.principal) + parseMoney(d.juros),
+    atualizadoEm: op.cadastradoEm ? op.cadastradoEm.split(' ')[0] : '—',
+  };
+}
 
 const COLUMN_TINT: Record<PrecatorioStatus, string> = {
   'Aguardando Proposta': 'from-slate-100/80 to-transparent',
@@ -48,8 +45,8 @@ const COLUMN_TINT: Record<PrecatorioStatus, string> = {
 };
 
 const COLUMN_RING: Record<PrecatorioStatus, string> = {
-  'Aguardando Proposta': 'ring-slate-300 bg-slate-50/80',
-  'Proposta Enviada': 'ring-sky-300 bg-sky-50/80',
+  'Aguardando Proposta': 'ring-slate-300 bg-gamma-bg/80',
+  'Proposta Enviada': 'ring-sky-300 bg-gamma-soft/80',
   'Proposta Rejeitada': 'ring-rose-300 bg-rose-50/70',
   'Aguardando Documentos': 'ring-orange-300 bg-orange-50/70',
   'Em Análise': 'ring-amber-300 bg-amber-50/70',
@@ -98,12 +95,38 @@ function IcoGrip() {
 export default function EsteiraPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
-  const [activeId, setActiveId] = useState<number | null>(null);
-  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<PrecatorioStatus | null>(null);
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!user) {
+        setCards([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setLoadError('');
+      try {
+        const rows = await listPrecatorios();
+        if (!cancelled) setCards(rows.map(recordToCard));
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setLoadError('Não foi possível carregar a esteira.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const active = cards.find((c) => c.id === activeId) ?? null;
 
@@ -115,7 +138,7 @@ export default function EsteiraPage() {
         c.processo.toLowerCase().includes(q) ||
         c.credor.toLowerCase().includes(q) ||
         c.tribunal.toLowerCase().includes(q) ||
-        String(c.id).includes(q),
+        c.cotacao.toLowerCase().includes(q),
     );
   }, [cards, search]);
 
@@ -140,10 +163,10 @@ export default function EsteiraPage() {
     window.setTimeout(() => setToast(''), 2200);
   }
 
-  function onDragStart(e: React.DragEvent, id: number) {
+  function onDragStart(e: React.DragEvent, id: string) {
     setDraggingId(id);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(id));
+    e.dataTransfer.setData('text/plain', id);
   }
 
   function onDragOver(e: React.DragEvent, col: PrecatorioStatus) {
@@ -152,12 +175,20 @@ export default function EsteiraPage() {
     if (overCol !== col) setOverCol(col);
   }
 
-  function onDrop(col: PrecatorioStatus) {
+  async function onDrop(col: PrecatorioStatus) {
     if (draggingId === null) return;
     const card = cards.find((c) => c.id === draggingId);
     if (card && card.status !== col) {
-      setCards((prev) => prev.map((c) => (c.id === draggingId ? { ...c, status: col, atualizadoEm: 'Agora' } : c)));
-      flash(`#${draggingId} → ${col}`);
+      const prev = cards;
+      setCards((p) => p.map((c) => (c.id === draggingId ? { ...c, status: col, atualizadoEm: 'Agora' } : c)));
+      flash(`${card.cotacao} → ${col}`);
+      try {
+        await updatePrecatorio(draggingId, { status: col });
+      } catch (e) {
+        console.error(e);
+        setCards(prev);
+        flash('Erro ao salvar status');
+      }
     }
     setDraggingId(null);
     setOverCol(null);
@@ -168,13 +199,23 @@ export default function EsteiraPage() {
     setOverCol(null);
   }
 
-  function moveCard(id: number, status: PrecatorioStatus) {
-    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, status, atualizadoEm: 'Agora' } : c)));
-    flash(`#${id} → ${status}`);
+  async function moveCard(id: string, status: PrecatorioStatus) {
+    const card = cards.find((c) => c.id === id);
+    if (!card || card.status === status) return;
+    const prev = cards;
+    setCards((p) => p.map((c) => (c.id === id ? { ...c, status, atualizadoEm: 'Agora' } : c)));
+    flash(`${card.cotacao} → ${status}`);
+    try {
+      await updatePrecatorio(id, { status });
+    } catch (e) {
+      console.error(e);
+      setCards(prev);
+      flash('Erro ao salvar status');
+    }
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f3f6fa]">
+    <div className="flex h-screen overflow-hidden bg-gamma-bg">
       <Sidebar onLogout={handleLogout} userName={user?.name ?? ''} userEmail={user?.email ?? ''} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -186,11 +227,12 @@ export default function EsteiraPage() {
           />
           <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">Operações</p>
-              <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">Esteira</h1>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gamma-strong">Operações</p>
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-gamma-text pl-10 lg:pl-0">Esteira</h1>
               <p className="mt-1 max-w-lg text-sm text-slate-500">
-                Arraste cards entre status · {cards.length} operações · pipeline {BRL.format(pipelineValue)}
+                Arraste cards entre status · {loading ? '…' : `${cards.length} operações`} · pipeline {BRL.format(pipelineValue)}
               </p>
+              {loadError && <p className="mt-1 text-sm text-red-600">{loadError}</p>}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
@@ -202,13 +244,13 @@ export default function EsteiraPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar processo, credor…"
-                  className="w-[220px] rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-200"
+                  className="w-[220px] rounded-xl border border-slate-200 bg-gamma-bg py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-gamma-strong focus:bg-white focus:ring-2 focus:shadow-gamma-focus"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => navigate('/precatorios')}
-                className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-sky-200 transition-colors hover:bg-sky-700"
+                className="inline-flex items-center gap-2 rounded-gamma bg-gamma-strong px-4 py-2.5 text-xs font-bold text-[#083D37] shadow-gamma transition-colors hover:bg-gamma"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -235,6 +277,9 @@ export default function EsteiraPage() {
 
         {/* Board */}
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          {loading ? (
+            <div className="flex h-full items-center justify-center text-sm text-slate-400">Carregando esteira…</div>
+          ) : (
           <div className="flex h-full min-w-max gap-3 px-5 py-4">
             {PRECATORIO_STATUS.map((col, colIdx) => {
               const colCards = filtered.filter((c) => c.status === col);
@@ -281,7 +326,7 @@ export default function EsteiraPage() {
                       <div
                         className={[
                           'mt-1 flex h-24 flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition-colors',
-                          isOver ? 'border-sky-400 bg-sky-50/50 text-sky-600' : 'border-slate-200/80 text-slate-400',
+                          isOver ? 'border-sky-400 bg-gamma-soft/50 text-gamma-strong' : 'border-slate-200/80 text-slate-400',
                         ].join(' ')}
                       >
                         <p className="text-xs font-medium">{isOver ? 'Solte aqui' : 'Vazio'}</p>
@@ -310,10 +355,10 @@ export default function EsteiraPage() {
                           aria-grabbed={isDragging}
                           className={[
                             'group relative cursor-grab rounded-xl border bg-white p-3 text-left outline-none transition-all duration-200 active:cursor-grabbing',
-                            'focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1',
+                            'focus-visible:ring-2 focus-visible:ring-gamma-strong focus-visible:ring-offset-1',
                             isDragging ? 'scale-[0.97] opacity-35 shadow-none' : 'hover:-translate-y-0.5 hover:shadow-md',
                             isActive
-                              ? 'border-sky-300 shadow-md ring-2 ring-sky-100'
+                              ? 'border-gamma-strong shadow-md ring-2 ring-gamma-soft'
                               : 'border-slate-200/90 shadow-[0_1px_0_rgba(15,23,42,0.03)] hover:border-slate-300',
                           ].join(' ')}
                           style={{ animationDelay: `${colIdx * 40 + i * 30}ms` }}
@@ -321,9 +366,9 @@ export default function EsteiraPage() {
                           <div className="mb-2 flex items-center justify-between gap-2">
                             <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                               <IcoGrip />
-                              #{card.id}
+                              {card.cotacao}
                             </span>
-                            <span className="rounded-md bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-100">
+                            <span className="rounded-md bg-gamma-bg px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-100">
                               {card.tribunal}
                             </span>
                           </div>
@@ -333,7 +378,7 @@ export default function EsteiraPage() {
                           </p>
 
                           <div className="mt-2.5 flex items-center gap-2">
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-100 to-cyan-50 text-[10px] font-bold text-sky-800 ring-1 ring-sky-100">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gamma-soft to-gamma-pale text-[10px] font-bold text-gamma-text ring-1 ring-gamma-soft">
                               {initials(card.credor)}
                             </span>
                             <div className="min-w-0 flex-1">
@@ -346,7 +391,7 @@ export default function EsteiraPage() {
                             <span className="font-display text-[13px] font-bold tabular-nums text-slate-900">
                               {BRL.format(card.valor)}
                             </span>
-                            <span className="text-[10px] font-semibold text-sky-600 opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="text-[10px] font-semibold text-gamma-strong opacity-0 transition-opacity group-hover:opacity-100">
                               Abrir →
                             </span>
                           </div>
@@ -358,6 +403,7 @@ export default function EsteiraPage() {
               );
             })}
           </div>
+          )}
         </div>
       </div>
 
@@ -374,7 +420,7 @@ export default function EsteiraPage() {
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_top,_rgba(14,165,233,0.14),_transparent_70%)]" aria-hidden />
             <header className="relative z-10 flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-600">Operação #{active.id}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gamma-strong">{active.cotacao}</p>
                 <h2 id="esteira-card-title" className="font-display mt-0.5 text-xl font-semibold text-slate-900">
                   {active.credor || 'Sem credor'}
                 </h2>
@@ -409,9 +455,9 @@ export default function EsteiraPage() {
                 </label>
                 <select
                   id="move-status"
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-200"
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-gamma-bg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:shadow-gamma-focus"
                   value={active.status}
-                  onChange={(e) => moveCard(active.id, e.target.value as PrecatorioStatus)}
+                  onChange={(e) => void moveCard(active.id, e.target.value as PrecatorioStatus)}
                 >
                   {PRECATORIO_STATUS.map((s) => (
                     <option key={s} value={s}>
@@ -426,14 +472,14 @@ export default function EsteiraPage() {
               <button
                 type="button"
                 onClick={() => navigate('/precatorios')}
-                className="flex-1 rounded-xl bg-sky-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-700"
+                className="flex-1 rounded-xl bg-gamma-strong py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gamma"
               >
                 Abrir em Precatórios
               </button>
               <button
                 type="button"
                 onClick={() => setActiveId(null)}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-gamma-bg"
               >
                 Fechar
               </button>

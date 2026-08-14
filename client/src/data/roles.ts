@@ -31,12 +31,22 @@ export function roleFromEmail(email: string | null | undefined): UserRole | null
   return SEED_EMAIL_ROLES[email.trim().toLowerCase()] ?? null;
 }
 
+/** Rotas exclusivas do administrador */
+export const ADMIN_ROUTES = ['/usuarios'] as const;
+
+export function isAdmin(role: UserRole | undefined | null): boolean {
+  return normalizeRole(role) === 'admin';
+}
+
 export function isCollaborator(role: UserRole | undefined | null): boolean {
   return normalizeRole(role) === 'collaborator';
 }
 
 export function canAccessRoute(role: UserRole | undefined | null, path: string): boolean {
   const r = normalizeRole(role);
+  if ((ADMIN_ROUTES as readonly string[]).some((allowed) => path === allowed || path.startsWith(`${allowed}/`))) {
+    return r === 'admin';
+  }
   if (r !== 'collaborator') return true;
   return (COLLABORATOR_ROUTES as readonly string[]).some(
     (allowed) => path === allowed || path.startsWith(`${allowed}/`),

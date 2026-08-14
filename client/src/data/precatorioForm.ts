@@ -25,6 +25,7 @@ export interface PrecatorioFormData {
   tipo: TipoPrecatorio | '';
   tribunal: string;
   oficioNome: string;
+  oficioAnexo: boolean;
   eComum: boolean;
   documento: string;
   requerente: string;
@@ -55,6 +56,7 @@ export function emptyForm(): PrecatorioFormData {
     tipo: '',
     tribunal: '',
     oficioNome: '',
+    oficioAnexo: false,
     eComum: false,
     documento: '',
     requerente: '',

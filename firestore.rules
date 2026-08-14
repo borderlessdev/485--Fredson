@@ -5,9 +5,27 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return signedIn() && userDoc().data.role == 'admin';
+    }
+
     match /users/{userId} {
-      allow read: if signedIn() && request.auth.uid == userId;
-      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn() && (
+        request.auth.uid == userId ||
+        (isAdmin()
+          && request.resource.data.keys().hasAll(['name', 'email', 'role'])
+          && request.resource.data.role in ['admin', 'operator', 'collaborator'])
+      );
+      allow update: if signedIn() && (
+        request.auth.uid == userId ||
+        (isAdmin()
+          && request.resource.data.role in ['admin', 'operator', 'collaborator'])
+      );
       allow delete: if false;
     }
 
@@ -24,6 +42,25 @@ service cloud.firestore {
       allow update: if signedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == resource.data.userId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /cedentes/{cedenteId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['userId', 'nome', 'statusEsteira']);
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /precatorio_anexos/{precatorioId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.size <= 900000;
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
   }
