@@ -90,10 +90,10 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Visão geral',
     items: [
+      { label: 'Dashboard', icon: IcoDashboard, href: '/dashboard' },
       { label: 'Meus Precatórios', icon: IcoPrecatorios, href: '/precatorios' },
       { label: 'Cedentes', icon: IcoCedentes, href: '/cedentes' },
       { label: 'Esteira', icon: IcoEsteira, href: '/esteira' },
-      { label: 'Dashboard', icon: IcoDashboard, href: '/dashboard' },
     ],
   },
   {
