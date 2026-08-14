@@ -34,22 +34,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /precatorios/{precatorioId} {
+    match /cedentes/{cedenteId} {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['userId', 'status', 'form']);
+        && request.resource.data.keys().hasAll(['userId', 'nome', 'statusEsteira']);
       allow update: if signedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == resource.data.userId;
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
-    match /cedentes/{cedenteId} {
+    match /precatorios/{precatorioId} {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['userId', 'nome', 'statusEsteira']);
+        && request.resource.data.keys().hasAll(['userId', 'status', 'form']);
       allow update: if signedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == resource.data.userId;

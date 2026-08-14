@@ -6,7 +6,6 @@ import DashboardPage from '@/pages/Dashboard';
 import ForgotPasswordPage from '@/pages/ForgotPassword';
 import CedentesPage from '@/pages/Cedentes';
 import EsteiraPage from '@/pages/Esteira';
-import CalculadoraPage from '@/pages/Calculadora';
 import GeradorDocsPage from '@/pages/GeradorDocs';
 import ImportarPage from '@/pages/Importar';
 import OperacoesPage from '@/pages/Operacoes';
@@ -24,7 +23,6 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/cedentes" element={<CedentesPage />} />
             <Route path="/esteira" element={<EsteiraPage />} />
-            <Route path="/calculadora" element={<CalculadoraPage />} />
             <Route path="/gerador-docs" element={<GeradorDocsPage />} />
             <Route path="/importar" element={<ImportarPage />} />
             <Route path="/precatorios" element={<OperacoesPage />} />

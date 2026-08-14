@@ -6,7 +6,6 @@ export const COLLABORATOR_ROUTES = [
   '/dashboard',
   '/cedentes',
   '/esteira',
-  '/calculadora',
 ] as const;
 
 export type CollaboratorRoute = (typeof COLLABORATOR_ROUTES)[number];
