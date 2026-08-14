@@ -171,11 +171,7 @@ export async function createPrecatorio(input: PrecatorioCreateInput): Promise<Pr
   };
 
   if (!input.skipCedenteSync) {
-    try {
-      await syncCedenteFromPrecatorio(record);
-    } catch (e) {
-      console.error('Falha ao sincronizar cedente:', e);
-    }
+    await syncCedenteFromPrecatorio(record);
   }
 
   return record;

@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { canAccessRoute } from '@/data/roles';
+import TrocarSenhaModal from '@/components/TrocarSenhaModal';
 
 export function ProtectedRoute() {
   const { user, isLoading } = useAuth();
@@ -22,5 +23,10 @@ export function ProtectedRoute() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {user.mustChangePassword ? <TrocarSenhaModal /> : null}
+    </>
+  );
 }

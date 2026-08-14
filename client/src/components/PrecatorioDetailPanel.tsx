@@ -105,11 +105,11 @@ export default function PrecatorioDetailPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-      <button type="button" className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={onClose} aria-label="Fechar" />
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:p-4 lg:p-6">
+      <button type="button" className="absolute inset-0 bg-slate-900/55 backdrop-blur-[3px]" onClick={onClose} aria-label="Fechar" />
 
       <aside
-        className="relative flex h-full w-full max-w-4xl flex-col overflow-hidden bg-white shadow-2xl animate-[slideIn_280ms_ease]"
+        className="relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl animate-[fadeScale_220ms_ease] sm:h-[calc(100vh-2rem)] sm:max-h-[960px] sm:rounded-2xl lg:h-[calc(100vh-3rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="detail-title"
@@ -390,9 +390,9 @@ export default function PrecatorioDetailPanel({
       </aside>
 
       <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(24px); opacity: 0.6; }
-          to { transform: translateX(0); opacity: 1; }
+        @keyframes fadeScale {
+          from { transform: scale(0.98) translateY(8px); opacity: 0.55; }
+          to { transform: scale(1) translateY(0); opacity: 1; }
         }
       `}</style>
     </div>

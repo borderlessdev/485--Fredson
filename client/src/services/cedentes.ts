@@ -234,15 +234,23 @@ function valorFaceFromPrecatorio(data: PrecatorioSyncInput['data']): number {
 export async function syncCedenteFromPrecatorio(op: PrecatorioSyncInput): Promise<void> {
   const uid = requireUid();
   const ref = doc(db, 'cedentes', op.id);
-  const existing = await getDoc(ref);
   const status = isStatus(op.status) ? op.status : 'Aguardando Proposta';
   const nome = sanitizePartyName(op.data.requerente);
   const processo = op.data.codigoProcesso.trim();
   const cpf = op.data.documento.trim();
   const valorFace = valorFaceFromPrecatorio(op.data);
 
-  if (existing.exists()) {
-    const prev = fromDoc(op.id, existing.data());
+  let existingData: DocumentData | null = null;
+  try {
+    const existing = await getDoc(ref);
+    if (existing.exists()) existingData = existing.data();
+  } catch (e) {
+    // get em doc inexistente pode falhar com regras antigas — segue para create
+    console.warn('Leitura de cedente para sync falhou; tentando criar:', e);
+  }
+
+  if (existingData) {
+    const prev = fromDoc(op.id, existingData);
     await updateDoc(ref, {
       ...toFirestore(
         {
@@ -266,7 +274,7 @@ export async function syncCedenteFromPrecatorio(op: PrecatorioSyncInput): Promis
     precatorioId: op.id,
     ...toFirestore(
       {
-        nome,
+        nome: nome || 'Sem nome',
         cpf,
         estadoCivil: '',
         email: '',
@@ -284,4 +292,24 @@ export async function syncCedenteFromPrecatorio(op: PrecatorioSyncInput): Promis
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+}
+
+/** Espelha precatórios que ainda não têm cedente (corrige syncs antigos que falharam). */
+export async function mirrorMissingCedentesFromPrecatorios(): Promise<CedenteRecord[]> {
+  const { listPrecatorios } = await import('@/services/precatorios');
+  const [cedentes, precatorios] = await Promise.all([listCedentes(), listPrecatorios()]);
+  const known = new Set(cedentes.map((c) => c.id));
+  let changed = false;
+
+  for (const p of precatorios) {
+    if (known.has(p.id)) continue;
+    try {
+      await syncCedenteFromPrecatorio(p);
+      changed = true;
+    } catch (e) {
+      console.error('Falha ao espelhar precatório em cedente:', p.id, e);
+    }
+  }
+
+  return changed ? listCedentes() : cedentes;
 }

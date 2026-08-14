@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { AuthUser, getMe, logout } from '@/services/auth';
+import { AuthUser, getMe, InactiveUserError, logout } from '@/services/auth';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -28,7 +28,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const profile = await getMe();
         setUser(profile);
-      } catch {
+      } catch (error) {
+        if (error instanceof InactiveUserError || auth.currentUser) {
+          await logout().catch(() => undefined);
+        }
         setUser(null);
       } finally {
         setIsLoading(false);

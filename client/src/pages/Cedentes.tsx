@@ -6,7 +6,7 @@ import { PRECATORIO_STATUS, STATUS_DOTS, STATUS_STYLES, type PrecatorioStatus } 
 import { sanitizePartyName } from '@/services/oficioPdf';
 import {
   createCedente,
-  listCedentes,
+  mirrorMissingCedentesFromPrecatorios,
   updateCedente,
   type CedenteRecord,
   type DadosBancarios,
@@ -304,7 +304,7 @@ export default function CedentesPage() {
       setLoading(true);
       setError('');
       try {
-        const rows = await listCedentes();
+        const rows = await mirrorMissingCedentesFromPrecatorios();
         if (!cancelled) setCedentes(rows);
       } catch (e) {
         console.error(e);

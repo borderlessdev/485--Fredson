@@ -22,9 +22,13 @@ service cloud.firestore {
           && request.resource.data.role in ['admin', 'operator', 'collaborator'])
       );
       allow update: if signedIn() && (
-        request.auth.uid == userId ||
         (isAdmin()
           && request.resource.data.role in ['admin', 'operator', 'collaborator'])
+        ||
+        (request.auth.uid == userId
+          && request.resource.data.mustChangePassword == false
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['mustChangePassword', 'passwordChangedAt', 'updatedAt']))
       );
       allow delete: if false;
     }
@@ -35,7 +39,9 @@ service cloud.firestore {
     }
 
     match /cedentes/{cedenteId} {
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      // resource == null: get em doc inexistente (necessário p/ sync precatório → cedente)
+      allow get: if signedIn() && (resource == null || resource.data.userId == request.auth.uid);
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasAll(['userId', 'nome', 'statusEsteira']);
